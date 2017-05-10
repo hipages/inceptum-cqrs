@@ -1,3 +1,3 @@
-require('../src/util/BluePatch');
+require('inceptum');
 require('must');
 require('mocha');

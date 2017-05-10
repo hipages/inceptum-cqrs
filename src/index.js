@@ -1,3 +1,4 @@
+const Inceptum = require('inceptum');
 const { Auth } = require('./auth/Auth.js');
 const { AuthService } = require('./auth/service/AuthService.js');
 const { SigningAuthService } = require('./auth/service/SigningAuthService.js');
@@ -15,7 +16,7 @@ const { InMemoryAggregateEventStore } = require('./cqrs/event/store/InMemoryAggr
 // const { ExecutionContext } = require('./cqrs/ExecutionContext.js');
 // const { IdGenerator } = require('./cqrs/IdGenerator.js');
 
-module.exports = {
+module.exports = Object.assign({}, Inceptum, {
   auth: {
     Auth,
     service: {
@@ -42,4 +43,4 @@ module.exports = {
       }
     }
   }
-};
+});
