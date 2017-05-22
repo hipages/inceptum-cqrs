@@ -16,7 +16,7 @@ const { InMemoryAggregateEventStore } = require('./cqrs/event/store/InMemoryAggr
 // const { ExecutionContext } = require('./cqrs/ExecutionContext.js');
 // const { IdGenerator } = require('./cqrs/IdGenerator.js');
 
-module.exports = Object.assign({}, Inceptum, {
+module.exports = Inceptum.util.deepAssign({}, Inceptum, {
   auth: {
     Auth,
     service: {
