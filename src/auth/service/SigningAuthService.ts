@@ -1,8 +1,11 @@
-const { Auth } = require('../Auth');
-const { AuthService } = require('./AuthService');
-const jwt = require('jsonwebtoken');
+import { Auth } from '../Auth';
+import { AuthService } from './AuthService';
+import * as jwt from 'jsonwebtoken';
 
-class SigningAuthService extends AuthService {
+export class SigningAuthService extends AuthService {
+  tokenOptions: jwt.SignOptions;
+  privateKeyPem: string;
+  
   constructor(options) {
     super(options);
     options = options || {};
@@ -16,7 +19,7 @@ class SigningAuthService extends AuthService {
       header: {}
     }, options.tokenOptions || {});
     this.tokenOptions.issuer = options.issuer;
-    this.tokenOptions.header.keyid = options.privateKeyId;
+    this.tokenOptions.header['keyid'] = options.privateKeyId;
   }
   /**
    * Signs an Auth object
@@ -34,5 +37,3 @@ class SigningAuthService extends AuthService {
   }
 
 }
-
-module.exports = { SigningAuthService };

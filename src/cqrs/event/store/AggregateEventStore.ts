@@ -1,28 +1,26 @@
-const { Event } = require('../Event');
+import { AggregateEvent } from '../AggregateEvent';
+import { Event } from '../Event';
 
-class AggregateEventStore {
+export abstract class AggregateEventStore {
   /**
    * Load all the events of an aggregate
    * @param {string} aggregateId The id of the aggregate whose events we want to load
    * @returns {AggregateEvent[]} The list of aggregate events of this aggregate
    */
-// eslint-disable-next-line no-unused-vars
-  getEventsOf(aggregateId) {
-    throw new Error('Not Implemented');
-  }
+  abstract getEventsOf(aggregateId: string): Array<AggregateEvent>;
+
   /**
    * Saves an aggregate event to the persistent store
-   * @param {aggregateEvent} aggregateEvent The aggregate event to store
+   * @param {AggregateEvent} aggregateEvent The aggregate event to store
    */
-// eslint-disable-next-line no-unused-vars
-  commitEvent(aggregateEvent) {
-    throw new Error('Not Implemented');
-  }
+  abstract commitEvent(aggregateEvent: AggregateEvent): void;
+
   /**
    * Saves a list of aggregate events to the persistent store
-   * @param {aggregateEvent[]} aggregateEvents The array of aggregate events to store
+   * @param {AggregateEvent[]} aggregateEvents The array of aggregate events to store
    */
-  commitAllEvents(aggregateEvents) {
+
+  commitAllEvents(aggregateEvents: Array<AggregateEvent>): void {
     aggregateEvents.forEach((event) => this.commitEvent(event));
   }
   /**
@@ -30,7 +28,8 @@ class AggregateEventStore {
    * @param {AggregateEvent} event The aggregate event to serialise
    * @returns {string} The serialised aggregate event
    */
-  serialize(event) {
+  // tslint:disable-next-line:prefer-function-over-method
+  serialize(event: AggregateEvent): string {
     return JSON.stringify(event);
   }
   /**
@@ -41,9 +40,8 @@ class AggregateEventStore {
    * @param {string} str The serialised aggregate event
    * @returns {AggregateEvent} The aggregate event as an object of the right class
    */
-  deserialize(str) {
-    return Event.fromObject(JSON.parse(str));
+  // tslint:disable-next-line:prefer-function-over-method
+  deserialize(str: string): AggregateEvent {
+    return Event.fromObject(JSON.parse(str)) as AggregateEvent;
   }
 }
-
-module.exports = { AggregateEventStore };

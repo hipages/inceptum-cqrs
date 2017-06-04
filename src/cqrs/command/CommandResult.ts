@@ -1,46 +1,52 @@
+import { Command } from './Command';
 
-class CommandResult {
-  constructor(command) {
+export class CommandResult {
+  replyObject: Object;
+  subCommandResults: Array<CommandResult>;
+  newAggregateType: string;
+  newAggregateId: string;
+  commandType: string;
+  commandId: string;
+
+  constructor(command: Command) {
     this.commandId = command.getCommandId();
     this.commandType = command.getCommandType();
     this.newAggregateId = null;
     this.newAggregateType = null;
     this.subCommandResults = [];
   }
-  getCommandId() {
+  getCommandId(): string {
     return this.commandId;
   }
-  getNewAggregateId() {
+  getNewAggregateId(): string {
     return this.newAggregateId;
   }
-  getNewAggregateType() {
+  getNewAggregateType(): string {
     return this.newAggregateType;
   }
-  setNewAggregate(newAggregateType, newAggregateId) {
+  setNewAggregate(newAggregateType: string, newAggregateId: string) {
     this.newAggregateType = newAggregateType;
     this.newAggregateId = newAggregateId;
   }
-  hasNewAggregateId() {
+  hasNewAggregateId(): boolean {
     return !!this.newAggregateId;
   }
-  getSubCommandResults() {
+  getSubCommandResults(): Array<CommandResult> {
     return this.subCommandResults;
   }
-  hasSubCommands() {
+  hasSubCommands(): boolean {
     return this.subCommandResults.length > 0;
   }
   /**
    * @param {CommandResult} commandResult
    */
-  addSubcommandResult(commandResult) {
+  addSubcommandResult(commandResult: CommandResult) {
     this.subCommandResults.push(commandResult);
   }
-  setReplyObject(replyObject) {
+  setReplyObject(replyObject: Object) {
     this.replyObject = replyObject;
   }
-  getReplyObject() {
+  getReplyObject(): Object {
     return this.replyObject;
   }
 }
-
-module.exports = { CommandResult };

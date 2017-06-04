@@ -1,17 +1,20 @@
-const { ExecutionContext } = require('./ExecutionContext');
-const { Aggregate } = require('./Aggregate');
-const { Command } = require('./command/Command');
-const { AggregateCreatingEvent } = require('./event/AggregateCreatingEvent');
+import { AggregateEventStore } from './event/store/AggregateEventStore';
+import { AggregateEvent } from './event/AggregateEvent';
+import { ExecutionContext } from './ExecutionContext';
+import { Aggregate } from './Aggregate';
+import { Command } from './command/Command';
+import { AggregateCreatingEvent } from './event/AggregateCreatingEvent';
 
-class CQRS {
+export class CQRS {
+  aggregateEventStore: AggregateEventStore;
   /**
    * Construct a new instance of the CQRS framework
    * @param {AggregateEventStore} aggregateEventStore The event store to use.
    */
-  constructor(aggregateEventStore) {
+  constructor(aggregateEventStore: AggregateEventStore) {
     this.aggregateEventStore = aggregateEventStore;
   }
-  newExecutionContext() {
+  newExecutionContext(): ExecutionContext {
     return new ExecutionContext(this.aggregateEventStore);
   }
 
@@ -20,12 +23,12 @@ class CQRS {
    * @param {Command} The command to execute
    * @returns {ExecutionContext} The execution context of the command
    */
-  executeCommand(command) {
+  executeCommand(command: Command) {
     const executionContext = this.newExecutionContext();
     executionContext.executeCommand(command);
     return executionContext;
   }
-  getAggregate(aggregateId) {
+  getAggregate(aggregateId: string): Aggregate {
     const allEvents = this.aggregateEventStore.getEventsOf(aggregateId);
     if (!allEvents || allEvents.length === 0) {
       return null;
@@ -42,5 +45,3 @@ class CQRS {
     return Command.fromObject(obj, commandType);
   }
 }
-
-module.exports = { CQRS };

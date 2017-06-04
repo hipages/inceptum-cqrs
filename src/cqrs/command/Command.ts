@@ -1,51 +1,62 @@
+import { Auth } from '../../auth/Auth';
+import { ExecutionContext } from '../ExecutionContext';
 const { IdGenerator } = require('../IdGenerator');
 
 const commandFieldType = '@commandType';
 
-class Command {
+interface Glue {
+  registerCommandClass: Function;
+}
+
+export type CommandOptions = {
+  issuerAuth: Auth,
+  commandId?: string
+}
+
+export abstract class Command {
+  issuerAuth: Auth;
+  commandId: string;
+  static commandClasses = new Map<string, Function>();
+
   /**
    * Creates a new command instance from the provided info.
    * @param {object} obj The object to take parameters from
    * @param {Auth} issuerAuth The Auth object of the issuer of this command
    * @param {[string]} commandId The id for this command. If not specified, the IdGenerator will be called to generate one
    */
-  constructor(obj) {
+  constructor(obj: CommandOptions) {
     this.copyFrom(obj, ['issuerAuth', 'commandId'], { commandId: IdGenerator.generate });
     this[commandFieldType] = this.constructor.name;
   }
-  getCommandId() {
+  getCommandId(): string {
     return this.commandId;
   }
-  getCommandType() {
+  getCommandType(): string {
     return this[commandFieldType];
   }
 // eslint-disable-next-line no-unused-vars
-  validate(executionContext) {
-    throw new Error('Not implemented');
-  }
+  abstract validate(executionContext: ExecutionContext);
+
 // eslint-disable-next-line no-unused-vars
-  doExecute(executionContext) {
-    throw new Error('Not implemented');
-  }
+  abstract doExecute(executionContext: ExecutionContext);
+
 // eslint-disable-next-line no-unused-vars
-  validateAuth(executionContext) {
-    throw new Error('Not implemented');
-  }
+  abstract validateAuth(executionContext: ExecutionContext);
 
   /**
    * Executed this command as part of the execution context.
    * @param {ExecutionContext} executionContext
    * @returns {*}
    */
-  execute(executionContext) {
+  execute(executionContext: ExecutionContext) {
     this.validate(executionContext);
     this.validateAuth(executionContext);
     this.doExecute(executionContext);
   }
-  getIssuerAuth() {
+  getIssuerAuth(): Auth {
     return this.issuerAuth;
   }
-  copyFrom(from, properties, defaults) {
+  copyFrom(from: Object, properties: Array<string>, defaults?: Object) {
     properties.forEach((p) => {
       if (Object.hasOwnProperty.call(from, p)) {
         this[p] = from[p];
@@ -58,11 +69,10 @@ class Command {
       }
     });
   }
-  static registerCommandClass(eventClass) {
+  static registerCommandClass(eventClass: Function) {
     Command.commandClasses.set(eventClass.name, eventClass);
-    eventClass.registerCommandClass = Command.registerCommandClass;
   }
-  static fromObject(obj, commandType) {
+  static fromObject(obj: Object, commandType: string): Command {
     if (!commandType && !Object.hasOwnProperty.call(obj, commandFieldType)) {
       throw new Error(`Can't deserialise object into typed instance because it doesn't have a ${commandFieldType} field`);
     }
@@ -71,12 +81,7 @@ class Command {
       throw new Error(`Unknown command type ${type}`);
     }
     const typeConstructor = Command.commandClasses.get(type);
-// eslint-disable-next-line new-cap
-    return new typeConstructor(obj);
+    return Reflect.construct(typeConstructor, [obj]);
   }
 
 }
-
-Command.commandClasses = new Map();
-
-module.exports = { Command };

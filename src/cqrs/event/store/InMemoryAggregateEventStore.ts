@@ -1,6 +1,8 @@
-const { AggregateEventStore } = require('./AggregateEventStore');
+import { AggregateEvent } from '../AggregateEvent';
+import { AggregateEventStore } from './AggregateEventStore';
 
-class InMemoryAggregateEventStore extends AggregateEventStore {
+export class InMemoryAggregateEventStore extends AggregateEventStore {
+  store: Map<string, any>;
   constructor() {
     super();
     this.store = new Map();
@@ -11,7 +13,7 @@ class InMemoryAggregateEventStore extends AggregateEventStore {
    * @returns {AggregateEvent[]} The list of aggregate events of this aggregate
    */
 // eslint-disable-next-line no-unused-vars
-  getEventsOf(aggregateId) {
+  getEventsOf(aggregateId: string): Array<AggregateEvent> {
     const eventStrArr = this.store.get(aggregateId);
     if (!eventStrArr || eventStrArr.length === 0) {
       return [];
@@ -23,7 +25,7 @@ class InMemoryAggregateEventStore extends AggregateEventStore {
    * @param {AggregateEvent} aggregateEvent The aggregate event to store
    */
 // eslint-disable-next-line no-unused-vars
-  commitEvent(aggregateEvent) {
+  commitEvent(aggregateEvent: AggregateEvent) {
     // console.log(JSON.stringify(aggregateEvent));
     const aggregateId = aggregateEvent.getAggregateId();
     if (!this.store.has(aggregateId)) {
@@ -36,5 +38,3 @@ class InMemoryAggregateEventStore extends AggregateEventStore {
     }
   }
 }
-
-module.exports = { InMemoryAggregateEventStore };

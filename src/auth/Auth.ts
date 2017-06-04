@@ -1,9 +1,17 @@
 
+export type RolesObj = {
+  [key: string]: string[]
+}
+
 /**
  * A class that represents both authentication and authorisation. Meaning that it
  * both serves to identify what is performing an action, and what permissions it has.
  */
-class Auth {
+export class Auth {
+  extraRoles: RolesObj;
+  roles: string[];
+  id: string;
+  type: string;
   /**
    * Construct an Auth object
    * @param {string} type The type of entity that this Auth represents. e.g. 'user', 'cron', etc
@@ -12,19 +20,20 @@ class Auth {
    * @param {object} extraRoles A list of extra roles that this Auth provides for a specific entity. e.g.
    * {"<AGGREG_TYPE>:<AGGREG_ID>": ["role1", "role2"], "module:<MODULE_ID>": [ "role3", "role4"] }
    */
-  constructor(type, id, roles, extraRoles) {
+  constructor(type:string, id: string, roles:Array<string> = [], extraRoles: RolesObj = {}) {
     this.type = type;
     this.id = id;
-    this.roles = roles || [];
-    this.extraRoles = extraRoles || {};
+    this.roles = roles;
+    this.extraRoles = extraRoles;
   }
-  getType() {
+
+  getType(): string {
     return this.type;
   }
-  getId() {
+  getId(): string {
     return this.id;
   }
-  getFullId() {
+  getFullId(): string {
     return `${this.type}:${this.id}`;
   }
   /**
@@ -32,7 +41,7 @@ class Auth {
    * include any extra roles that it may have re: that entity.
    * @param {[string]} forEntity An optional entity that we want to check roles for
    */
-  getRoles(forEntity) {
+  getRoles(forEntity?: string): Array<string> {
     if ((!forEntity)
       || !(Object.hasOwnProperty.call(this.extraRoles, forEntity))) {
       return this.roles;
@@ -41,9 +50,7 @@ class Auth {
     this.extraRoles[forEntity].forEach((r) => allRoles.add(r));
     return Array.from(allRoles);
   }
-  getExtraRoles() {
+  getExtraRoles(): RolesObj {
     return this.extraRoles;
   }
 }
-
-module.exports = { Auth };

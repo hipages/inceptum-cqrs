@@ -1,9 +1,12 @@
 
-class Aggregate {
-  constructor(aggregateType, aggregateId) {
+export class Aggregate {
+  aggregateRoles: Map<string, Array<string>>;
+  aggregateId: string;
+  aggregateType: string;
+  constructor(aggregateType: string, aggregateId: string) {
     this.aggregateType = aggregateType;
     this.aggregateId = aggregateId;
-    this.aggregateRoles = {};
+    this.aggregateRoles = new Map();
   }
   getAggregateType() {
     return this.aggregateType;
@@ -17,7 +20,7 @@ class Aggregate {
   /**
    * Gets the extra roles that this aggregate grants
    */
-  getAggregateRoles() {
+  getAggregateRoles(): Map<string, Array<string>>  {
     return this.aggregateRoles;
   }
   /**
@@ -25,9 +28,10 @@ class Aggregate {
    * @param {string} Optional. The id of the entity we're asking about.
    * @returns {[string]} The list of roles for this aggregate
    */
-  getAggregateRolesFor(entityId) {
-    return Object.hasOwnProperty.call(this.aggregateRoles, entityId) ? this.aggregateRoles[entityId] : [];
+  getAggregateRolesFor(entityId): Array<string> {
+    if (this.aggregateRoles.has(entityId)) {
+      return this.aggregateRoles.get(entityId);
+    }
+    return [];
   }
 }
-
-module.exports = { Aggregate };

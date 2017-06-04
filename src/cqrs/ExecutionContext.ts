@@ -1,30 +1,39 @@
-const { Aggregate } = require('./Aggregate');
-const { AggregateEvent } = require('./event/AggregateEvent');
-const { AggregateCommand } = require('./command/AggregateCommand');
-const { AggregateEventStore } = require('./event/store/AggregateEventStore');
-const { AggregateCreatingEvent } = require('./event/AggregateCreatingEvent');
-const { AggregateCreatingCommand } = require('./command/AggregateCreatingCommand');
-const { CommandResult } = require('./command/CommandResult');
+import { util } from 'inceptum';
+import { Command } from './command/Command';
+import { Aggregate } from './Aggregate';
+import { AggregateEvent } from './event/AggregateEvent';
+import { AggregateCommand } from './command/AggregateCommand';
+import { AggregateEventStore } from './event/store/AggregateEventStore';
+import { AggregateCreatingEvent } from './event/AggregateCreatingEvent';
+import { AggregateCreatingCommand } from './command/AggregateCreatingCommand';
+import { CommandResult } from './command/CommandResult';
 
-const Status = {
-  NOT_COMMMITED: 1,
-  COMMITTING: 2,
-  COMMITTED: 3
-};
+export enum Status {
+  NOT_COMMMITED,
+  COMMITTING,
+  COMMITTED,
+}
 
-class ExecutionContext extends AggregateEventStore {
+export class ExecutionContext extends AggregateEventStore {
+  committed = false;
+  commandResults: Map<string, CommandResult>;
+  error: Error;
+  commandsToExecute: AggregateCommand[];
+  eventsToEmit: AggregateEvent[];
+  status: Status;
+  aggregateEventStore: AggregateEventStore;
   /**
    * Constructs a new instance of ExecutionContext
    * @param {AggregateEventStore} aggregateEventStore The store to commit events to
    */
-  constructor(aggregateEventStore) {
+  constructor(aggregateEventStore: AggregateEventStore) {
     super();
     this.aggregateEventStore = aggregateEventStore;
     this.status = Status.NOT_COMMMITED;
     this.eventsToEmit = [];
     this.commandsToExecute = [];
     this.error = null;
-    this.commandResults = new Map();
+    this.commandResults = new Map<string, CommandResult>();
     // this.aggregateCache = new Map();
   }
   /**
@@ -33,7 +42,7 @@ class ExecutionContext extends AggregateEventStore {
    * commands have been executed and the execution has been successful.
    * @param {aggregateEvent} aggregateEvent The aggregate event to store
    */
-  commitEvent(event) {
+  commitEvent(event: AggregateEvent): void {
     this.validateNotCommitted();
     if (event && (event instanceof AggregateEvent)) {
       this.eventsToEmit.push(event);
@@ -46,7 +55,7 @@ class ExecutionContext extends AggregateEventStore {
    * Adds a command to the queue of commands to be executed.
    * @param {AggregateCommand} aggregateCommand The command to add to the execution queue
    */
-  addCommandToExecute(aggregateCommand) {
+  addCommandToExecute(aggregateCommand: AggregateCommand) {
     this.validateNotCommitted();
     this.commandsToExecute.push(aggregateCommand);
   }
@@ -73,9 +82,8 @@ class ExecutionContext extends AggregateEventStore {
     if (!(firstEvent instanceof AggregateCreatingEvent)) {
       throw new Error(`The first event of aggregate ${aggregateId} is not an AggregateCreatingEvent. Panic!`);
     }
-    const aggregate = new Aggregate(firstEvent.getAggregateType(), firstEvent.getAggregateId());
+    const aggregate = new Aggregate((firstEvent as AggregateCreatingEvent).getAggregateType(), firstEvent.getAggregateId());
     allEvents.forEach((e) => e.apply(aggregate));
-    // this.aggregateCache.set(aggregateId, aggregate);
     return aggregate;
   }
   /**
@@ -114,12 +122,10 @@ class ExecutionContext extends AggregateEventStore {
         aggregate = this.getAggregate(command.getAggregateId());
       }
       try {
-        command.execute(this, aggregate);
+        command.executeWithAggregate(this, aggregate);
       } catch (e) {
         this.committed = true;
-        this.error = new Error('There was an error executing command');
-        this.error.command = command;
-        this.error.cause = e;
+        this.error = new util.ExtendedError(`There was an error executing command ${command}`, e);
         throw e;
       }
     }
@@ -128,8 +134,7 @@ class ExecutionContext extends AggregateEventStore {
     try {
       this.aggregateEventStore.commitAllEvents(this.eventsToEmit);
     } catch (e) {
-      this.error = new Error('There was an error saving events');
-      this.error.cause = e;
+      this.error = new util.ExtendedError('There was an error saving events', e);
       throw e;
     }
   }
@@ -147,6 +152,8 @@ class ExecutionContext extends AggregateEventStore {
     this.commandResults.set(command, result);
     return result;
   }
-}
 
-module.exports = { ExecutionContext };
+   getEventsOf(aggregateId: string): Array<AggregateEvent> {
+    return this.aggregateEventStore.getEventsOf(aggregateId);
+  }
+}
