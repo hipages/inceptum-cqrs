@@ -2,7 +2,7 @@
   "name": "inceptum-cqrs",
   "version": "0.2.0",
   "description": "Extension to Inceptum to build apps based on CQRS",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "NODE_ENV=test nyc mocha",
     "itest": "NODE_ENV=test nyc mocha itest",
