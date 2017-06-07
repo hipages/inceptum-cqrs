@@ -1,4 +1,4 @@
-import { util } from 'inceptum';
+import { ExtendedError } from 'inceptum';
 import { Command } from './command/Command';
 import { Aggregate } from './Aggregate';
 import { AggregateEvent } from './event/AggregateEvent';
@@ -124,7 +124,7 @@ export class ExecutionContext extends AggregateEventStore {
         command.executeWithAggregate(this, aggregate);
       } catch (e) {
         this.committed = true;
-        this.error = new util.ExtendedError(`There was an error executing command ${command}`, e);
+        this.error = new ExtendedError(`There was an error executing command ${command}`, e);
         throw e;
       }
     }
@@ -133,7 +133,7 @@ export class ExecutionContext extends AggregateEventStore {
     try {
       this.aggregateEventStore.commitAllEvents(this.eventsToEmit);
     } catch (e) {
-      this.error = new util.ExtendedError('There was an error saving events', e);
+      this.error = new ExtendedError('There was an error saving events', e);
       throw e;
     }
   }
