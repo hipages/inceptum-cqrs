@@ -1,6 +1,6 @@
 
 export class Aggregate {
-  aggregateRoles: Map<string, Array<string>>;
+  private aggregateRoles: Map<string, Array<string>>;
   aggregateId: string;
   aggregateType: string;
   constructor(aggregateType: string, aggregateId: string) {
@@ -33,5 +33,12 @@ export class Aggregate {
       return this.aggregateRoles.get(entityId);
     }
     return [];
+  }
+  addAggregateRole(entityId: string, roles: Array<string>) {
+    if (this.aggregateRoles.has(entityId)) {
+      this.aggregateRoles.set(entityId, this.aggregateRoles.get(entityId).concat(roles));
+    } else {
+      this.aggregateRoles.set(entityId, roles);
+    }
   }
 }

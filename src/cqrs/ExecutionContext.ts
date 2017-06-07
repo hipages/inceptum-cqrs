@@ -117,10 +117,9 @@ export class ExecutionContext extends AggregateEventStore {
     this.status = Status.COMMITTING;
     while (this.commandsToExecute.length > 0) {
       const command = this.commandsToExecute.shift();
-      let aggregate;
-      if ((command instanceof AggregateCommand) && !(command instanceof AggregateCreatingCommand)) {
-        aggregate = this.getAggregate(command.getAggregateId());
-      }
+      const aggregate = (command instanceof AggregateCreatingCommand) ?
+        new Aggregate(command.getAggregateType(), command.getAggregateId()) :
+        this.getAggregate(command.getAggregateId());
       try {
         command.executeWithAggregate(this, aggregate);
       } catch (e) {

@@ -1,5 +1,8 @@
+import { IdGenerator, UUIDGenerator } from '../IdGenerator';
 import { Command } from './Command';
 import { AggregateCommand, AggregateCommandOptions } from './AggregateCommand';
+
+const defaultGenerator = new UUIDGenerator();
 
 export type AggregateCreatingCommandOptions = AggregateCommandOptions & {aggregateType: string};
 
@@ -21,8 +24,14 @@ export abstract class AggregateCreatingCommand extends AggregateCommand {
   getAggregateType() {
     return this.aggregateType;
   }
+  getAggregateId() {
+    if (!this.aggregateId) {
+      this.aggregateId = this.getIdGenerator().generate(this.constructor.name);
+    }
+    return this.aggregateId;
+  }
+  // tslint:disable-next-line:prefer-function-over-method
+  getIdGenerator(): IdGenerator {
+    return defaultGenerator;
+  }
 }
-
-Command.registerCommandClass(AggregateCreatingCommand);
-
-module.exports = { AggregateCreatingCommand };

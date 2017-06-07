@@ -1,9 +1,10 @@
+import { ExecutionContext } from '../ExecutionContext';
 import { Command, CommandOptions } from './Command';
 
-export type AggregateCommandOptions = CommandOptions & {aggregateId: string};
+export type AggregateCommandOptions = CommandOptions & {aggregateId?: string};
 
 export abstract class AggregateCommand extends Command {
-  aggregateId: string;
+  protected aggregateId: string;
   /**
    *
    * @param {object} obj The object to take parameters from
@@ -13,6 +14,7 @@ export abstract class AggregateCommand extends Command {
    */
   constructor(obj: AggregateCommandOptions) {
     super(obj);
+    this.aggregateId = obj.aggregateId;
   }
   getAggregateId(): string {
     return this.aggregateId;
@@ -25,12 +27,12 @@ export abstract class AggregateCommand extends Command {
    * @param {Aggregate} aggregate The aggregate this command will execute on
    */
   abstract validateWithAggregate(executionContext, aggregate);
-  
-  // eslint-disable-next-line no-unused-vars
-  validate(executionContext) {
+
+  // tslint:disable-next-line:prefer-function-over-method
+  validate(executionContext: ExecutionContext) {
     throw new Error('Please call validateWithAggregate instead');
   }
-  
+
   /**
    * Executes an already validated command on the given aggregate.
    * This method must be overriden by concrete command implementations
@@ -39,8 +41,8 @@ export abstract class AggregateCommand extends Command {
    */
   abstract doExecuteWithAggregate(executionContext, aggregate);
 
-  // eslint-disable-next-line no-unused-vars
-  doExecute(executionContext) {
+  // tslint:disable-next-line:prefer-function-over-method
+  doExecute(executionContext: ExecutionContext) {
     throw new Error('Please call doExecuteWithAggregate instead');
   }
 
@@ -51,15 +53,18 @@ export abstract class AggregateCommand extends Command {
    */
   abstract validateAuthWithAggregate(executionContext, aggregate);
 
-  // eslint-disable-next-line no-unused-vars
-  validateAuth(executionContext) {
+  // tslint:disable-next-line:prefer-function-over-method
+  validateAuth(executionContext: ExecutionContext) {
     throw new Error('Please call validateAuthWithAggregate');
   }
+
   getRolesForAggregate(aggregate) {
     const authRoles = this.issuerAuth.getRoles(aggregate.getFullId()) || [];
     const aggRoles = aggregate.getAggregateRolesFor(this.issuerAuth.getFullId());
     return [].concat(authRoles, aggRoles);
   }
+
+  // tslint:disable-next-line:prefer-function-over-method
   execute(executionContext) {
     throw new Error('Please call executeWithAggregate instead');
   }
@@ -75,9 +80,5 @@ export abstract class AggregateCommand extends Command {
     this.validateAuthWithAggregate(executionContext, aggregate);
     this.doExecuteWithAggregate(executionContext, aggregate);
   }
-  
 }
 
-Command.registerCommandClass(AggregateCommand);
-
-module.exports = { AggregateCommand };

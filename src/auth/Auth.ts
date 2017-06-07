@@ -1,7 +1,8 @@
 
+// tslint:disable-next-line:interface-over-type-literal
 export type RolesObj = {
-  [key: string]: string[]
-}
+  [key: string]: string[],
+};
 
 /**
  * A class that represents both authentication and authorisation. Meaning that it
@@ -20,7 +21,7 @@ export class Auth {
    * @param {object} extraRoles A list of extra roles that this Auth provides for a specific entity. e.g.
    * {"<AGGREG_TYPE>:<AGGREG_ID>": ["role1", "role2"], "module:<MODULE_ID>": [ "role3", "role4"] }
    */
-  constructor(type:string, id: string, roles:Array<string> = [], extraRoles: RolesObj = {}) {
+  constructor(type: string, id: string, roles: Array<string> = [], extraRoles: RolesObj = {}) {
     this.type = type;
     this.id = id;
     this.roles = roles;

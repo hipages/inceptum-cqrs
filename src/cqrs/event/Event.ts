@@ -1,8 +1,13 @@
-import { IdGenerator } from '../IdGenerator';
+import { IdGenerator, UUIDGenerator } from '../IdGenerator';
 
 const eventTypeField = '@eventType';
+const defaultGenerator = new UUIDGenerator();
 
-export type EventOptions = {issuerCommandId: string, eventId?: string};
+// tslint:disable-next-line:interface-over-type-literal
+export type EventOptions = {
+  issuerCommandId: string,
+  eventId?: string,
+};
 
 export class Event {
   eventId: string;
@@ -11,7 +16,7 @@ export class Event {
 
   constructor(obj: EventOptions) {
     this.issuerCommandId = obj.issuerCommandId;
-    this.eventId = obj.eventId || IdGenerator.generate();
+    this.eventId = obj.eventId || this.getIdGenerator().generate(this.constructor.name);
     this[eventTypeField] = this.constructor.name;
   }
   getEventId(): string {
@@ -47,6 +52,10 @@ export class Event {
     const typeConstructor = Event.eventClasses.get(type);
 // eslint-disable-next-line new-cap
     return Reflect.construct(typeConstructor, [obj]);
+  }
+  // tslint:disable-next-line:prefer-function-over-method
+  protected getIdGenerator(): IdGenerator {
+    return defaultGenerator;
   }
 }
 

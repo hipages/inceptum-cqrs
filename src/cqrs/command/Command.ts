@@ -1,17 +1,19 @@
 import { Auth } from '../../auth/Auth';
 import { ExecutionContext } from '../ExecutionContext';
-const { IdGenerator } = require('../IdGenerator');
+import { IdGenerator, UUIDGenerator } from '../IdGenerator';
 
 const commandFieldType = '@commandType';
+const defaultGenerator = new UUIDGenerator();
 
 interface Glue {
-  registerCommandClass: Function;
+  registerCommandClass: Function,
 }
 
+// tslint:disable-next-line:interface-over-type-literal
 export type CommandOptions = {
-  issuerAuth: Auth,
-  commandId?: string
-}
+  issuerAuth?: Auth,
+  commandId?: string,
+};
 
 export abstract class Command {
   issuerAuth: Auth;
@@ -25,7 +27,8 @@ export abstract class Command {
    * @param {[string]} commandId The id for this command. If not specified, the IdGenerator will be called to generate one
    */
   constructor(obj: CommandOptions) {
-    this.copyFrom(obj, ['issuerAuth', 'commandId'], { commandId: IdGenerator.generate });
+    this.issuerAuth = obj.issuerAuth;
+    this.commandId = obj.commandId || this.getIdGenerator().generate(this.constructor.name);
     this[commandFieldType] = this.constructor.name;
   }
   getCommandId(): string {
@@ -56,19 +59,6 @@ export abstract class Command {
   getIssuerAuth(): Auth {
     return this.issuerAuth;
   }
-  copyFrom(from: Object, properties: Array<string>, defaults?: Object) {
-    properties.forEach((p) => {
-      if (Object.hasOwnProperty.call(from, p)) {
-        this[p] = from[p];
-      } else if (defaults && Object.hasOwnProperty.call(defaults, p)) {
-        if (defaults[p] instanceof Function) {
-          this[p] = defaults[p]();
-        } else {
-          this[p] = defaults[p];
-        }
-      }
-    });
-  }
   static registerCommandClass(eventClass: Function) {
     Command.commandClasses.set(eventClass.name, eventClass);
   }
@@ -83,5 +73,8 @@ export abstract class Command {
     const typeConstructor = Command.commandClasses.get(type);
     return Reflect.construct(typeConstructor, [obj]);
   }
-
+  // tslint:disable-next-line:prefer-function-over-method
+  protected getIdGenerator(): IdGenerator {
+    return defaultGenerator;
+  }
 }

@@ -17,7 +17,7 @@ export * from 'inceptum';
 
 export namespace auth {
   export const Auth = _Auth.Auth;
-  
+
   export namespace service {
     export const AuthService = _AuthService.AuthService;
     export const SigningAuthService = _SigningAuthService.SigningAuthService;

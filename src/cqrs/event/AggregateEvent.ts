@@ -14,5 +14,3 @@ export abstract class AggregateEvent extends Event {
   }
   abstract apply(aggregate);
 }
-
-Event.registerEventClass(AggregateEvent);

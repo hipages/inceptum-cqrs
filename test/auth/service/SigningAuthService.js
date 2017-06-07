@@ -28,7 +28,7 @@ describe('auth/service/SigningAuthService', () => {
     });
     it('Creates a JWT that can be validated', () => {
       const auth = new Auth('user', 'testUserId', ['user', 'admin'], { 'job:1234': ['creator'] });
-      const service = new SigningAuthService({ issuer: 'TestIssuer', privateKeyId: 'test1', privateKeyPem, publicKeys: { test1: publicKeyPem } });
+      const service = new SigningAuthService({ issuer: 'TestIssuer', privateKeyId: 'test1', privateKeyPem, publicKeys: new Map([['test1', publicKeyPem]]) });
       const signed = service.sign(auth);
       const resp = service.validate(signed);
       resp.must.eql(auth);

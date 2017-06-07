@@ -1,15 +1,15 @@
 import * as jwt from 'jsonwebtoken';
 import { Auth } from '../Auth';
 
-export type AuthServiceOptions = {
-  publicKeys?:Map<string, string>
-};
+export interface AuthServiceOptions {
+  publicKeys?: Map<string, string>,
+}
 
 export class AuthService {
   publicKeys: Map<string, string>;
 
   constructor(options: AuthServiceOptions) {
-    this.publicKeys = options.publicKeys || new Map<string,string>();
+    this.publicKeys = options.publicKeys || new Map<string, string>();
   }
   registerPublicKey(keyId: string, publicKeyPem: string): void {
     this.publicKeys.set(keyId, publicKeyPem);
