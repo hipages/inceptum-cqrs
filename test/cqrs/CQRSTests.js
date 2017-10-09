@@ -25,7 +25,8 @@ describe('cqrs', () => {
         cqrs.executeCommand(CQRS.deserialiseCommand({ aggregateId, issuerAuth, title: 'Test title' }, 'CreateTodoCommand'));
         true.must.be.falsy();
       } catch (e) {
-        e.must.be.an.error('Need to specify a description for the Todo');
+        e.must.be.an.error(/^There was an error executing command/);
+        e.cause.must.be.an.error('Need to specify a description for the Todo');
       }
     });
     it('Can be marked as done', () => {
@@ -84,7 +85,8 @@ describe('cqrs', () => {
         executionContext2.commit();
         true.must.be.falsy();
       } catch (e) {
-        e.must.be.an.error('Only the creator of the Todo can mark it as done');
+        e.must.be.an.error(/^There was an error executing command/);
+        e.cause.must.be.an.error('Only the creator of the Todo can mark it as done');
       }
     });
   });

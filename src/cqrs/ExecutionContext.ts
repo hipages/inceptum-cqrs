@@ -1,4 +1,3 @@
-import { ExtendedError } from 'inceptum';
 import { Command } from './command/Command';
 import { Aggregate } from './Aggregate';
 import { AggregateEvent } from './event/AggregateEvent';
@@ -82,7 +81,7 @@ export class ExecutionContext extends AggregateEventStore {
     if (!(firstEvent instanceof AggregateCreatingEvent)) {
       throw new Error(`The first event of aggregate ${aggregateId} is not an AggregateCreatingEvent. Panic!`);
     }
-    const aggregate = new Aggregate((firstEvent as AggregateCreatingEvent).getAggregateType(), firstEvent.getAggregateId());
+    const aggregate = new Aggregate(firstEvent.getAggregateType(), firstEvent.getAggregateId());
     allEvents.forEach((e) => e.apply(aggregate));
     return aggregate;
   }
@@ -124,8 +123,9 @@ export class ExecutionContext extends AggregateEventStore {
         command.executeWithAggregate(this, aggregate);
       } catch (e) {
         this.committed = true;
-        this.error = new ExtendedError(`There was an error executing command ${command}`, e);
-        throw e;
+        this.error = new Error(`There was an error executing command ${command}`);
+        this.error['cause'] = e;
+        throw this.error;
       }
     }
     // All commands executed correctly
@@ -133,8 +133,9 @@ export class ExecutionContext extends AggregateEventStore {
     try {
       this.aggregateEventStore.commitAllEvents(this.eventsToEmit);
     } catch (e) {
-      this.error = new ExtendedError('There was an error saving events', e);
-      throw e;
+      this.error = new Error('There was an error saving events');
+      this.error['cause'] = e;
+      throw this.error;
     }
   }
   getError() {

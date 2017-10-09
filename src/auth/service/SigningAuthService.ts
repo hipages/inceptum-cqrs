@@ -19,11 +19,10 @@ export class SigningAuthService extends AuthService {
       throw new Error('Please specify a privateKeyPem in the options');
     }
     this.privateKeyPem = options.privateKeyPem;
-    this.tokenOptions = Object.assign({
+    this.tokenOptions = {
       algorithm: 'RS512',
       expiresIn: '30d',
-      header: {},
-    }, options.tokenOptions || {});
+      header: {}, ...(options.tokenOptions || {})};
     this.tokenOptions.issuer = options.issuer;
     this.tokenOptions.header['keyid'] = options.privateKeyId;
   }
