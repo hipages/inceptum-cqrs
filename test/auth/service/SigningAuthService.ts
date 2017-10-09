@@ -1,14 +1,16 @@
-const { Auth } = require('../../../src/auth/Auth');
-const { SigningAuthService } = require('../../../src/auth/service/SigningAuthService');
-const fs = require('fs');
-const path = require('path');
+import { suite, test, slow, timeout } from 'mocha-typescript';
+import { must } from 'must';
+import * as fs from 'fs';
+import * as path from 'path';
+import { Auth } from '../../../src/auth/Auth';
+import { SigningAuthService } from '../../../src/auth/service/SigningAuthService';
 
 const privateKeyPem = fs.readFileSync(path.join(__dirname, 'private.pem'));
 const publicKeyPem = fs.readFileSync(path.join(__dirname, 'public.pem'));
 
-describe('auth/service/SigningAuthService', () => {
-  describe('Signing', () => {
-    it('creates a valid JWT', () => {
+suite('auth/service/SigningAuthService', () => {
+  suite('Signing', () => {
+    test('creates a valid JWT', () => {
       const auth = new Auth('user', 'testUserId', ['user', 'admin'], { 'job:1234': ['creator'] });
       const service = new SigningAuthService({ issuer: 'TestIssuer', privateKeyId: 'test1', privateKeyPem });
       const resp = service.sign(auth);
@@ -26,7 +28,7 @@ describe('auth/service/SigningAuthService', () => {
       payload.roles.must.eql(['user', 'admin']);
       payload.extraRoles.must.eql({ 'job:1234': ['creator'] });
     });
-    it('Creates a JWT that can be validated', () => {
+    test('Creates a JWT that can be validated', () => {
       const auth = new Auth('user', 'testUserId', ['user', 'admin'], { 'job:1234': ['creator'] });
       const service = new SigningAuthService({ issuer: 'TestIssuer', privateKeyId: 'test1', privateKeyPem, publicKeys: new Map([['test1', publicKeyPem]]) });
       const signed = service.sign(auth);
