@@ -13,15 +13,19 @@ export class TodoAggregate extends Aggregate {
   status: string;
 }
 
-export type TodoCreatedEventOptions = AggregateEventOptions & {title: string, description: string, creator: string};
+export type TodoCreatedEventOptions = AggregateCreatingEventOptions & {
+  title: string,
+  description: string,
+  creator: string,
+};
 
 export class TodoCreatedEvent extends AggregateCreatingEvent {
   creator: string;
   description: string;
   title: string;
   constructor(obj: TodoCreatedEventOptions) {
-    (obj as any as AggregateCreatingEventOptions).aggregateType = 'Todo';
-    super(obj as any as AggregateCreatingEventOptions);
+    obj.aggregateType = 'Todo';
+    super(obj);
     this.title = obj.title;
     this.description = obj.description;
     this.creator = obj.creator;
@@ -31,15 +35,6 @@ export class TodoCreatedEvent extends AggregateCreatingEvent {
     aggregate.description = this.description;
     aggregate.status = 'NotDone';
     aggregate.addAggregateRole(this.creator, ['creator']);
-  }
-  static fromCommand(createTodoCommand) {
-    return new TodoCreatedEvent({
-      aggregateId: createTodoCommand.getAggregateId(),
-      issuerCommandId: createTodoCommand.getCommandId(),
-      title: createTodoCommand.title,
-      description: createTodoCommand.description,
-      creator: createTodoCommand.getIssuerAuth().getFullId(),
-    });
   }
 }
 
@@ -66,7 +61,13 @@ export class CreateTodoCommand extends AggregateCreatingCommand {
     this.aggregateId = obj.aggregateId;
   }
   doExecuteWithAggregate(executionContext, aggregate) {
-    executionContext.commitEvent(TodoCreatedEvent.fromCommand(this));
+    executionContext.commitEvent(new TodoCreatedEvent({
+      aggregateId: this.getAggregateId(),
+      issuerCommandId: this.getCommandId(),
+      title: this.title,
+      description: this.description,
+      creator: this.getIssuerAuth().getFullId(),
+    }));
   }
   validateWithAggregate() {
     if (!this.title) {
@@ -85,7 +86,10 @@ export class CreateTodoCommand extends AggregateCreatingCommand {
 
 export class MarkTodoDoneCommand extends AggregateCommand {
   doExecuteWithAggregate(executionContext) {
-    executionContext.commitEvent(new TodoMarkedDoneEvent({ aggregateId: this.getAggregateId(), issuerCommandId: this.getCommandId() }));
+    executionContext.commitEvent(new TodoMarkedDoneEvent({
+      aggregateId: this.getAggregateId(),
+      issuerCommandId: this.getCommandId(),
+    }));
   }
   validateAuthWithAggregate(executionContext, aggregate) {
     const roles = this.getRolesForAggregate(aggregate);

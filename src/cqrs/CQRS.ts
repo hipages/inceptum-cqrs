@@ -7,6 +7,8 @@ import { AggregateCreatingEvent } from './event/AggregateCreatingEvent';
 
 export class CQRS {
   aggregateEventStore: AggregateEventStore;
+  aggregateClasses = new Map<string, Function>();
+
   /**
    * Construct a new instance of the CQRS framework
    * @param {AggregateEventStore} aggregateEventStore The event store to use.
@@ -37,11 +39,16 @@ export class CQRS {
     if (!(firstEvent instanceof AggregateCreatingEvent)) {
       throw new Error(`The first event of aggregate ${aggregateId} is not an AggregateCreatingEvent. Panic!`);
     }
-    const aggregate = new Aggregate(firstEvent.getAggregateType(), firstEvent.getAggregateId());
+    const aggregateType = firstEvent.getAggregateType();
+    const aggregateClass = this.aggregateClasses.has(aggregateType) ? this.aggregateClasses.get(aggregateType) : Aggregate;
+    const aggregate = new (aggregateClass as any)(firstEvent.getAggregateType(), firstEvent.getAggregateId());
     allEvents.forEach((e) => e.apply(aggregate));
     return aggregate;
   }
-  static deserialiseCommand(obj, commandType) {
-    return Command.fromObject(obj, commandType);
+  static deserialiseCommand<T extends Command>(obj, commandType): T {
+    return Command.fromObject(obj, commandType) as T;
+  }
+  registerAggregateClass(name: string, aggregateClass: Function) {
+    this.aggregateClasses.set(name, aggregateClass);
   }
 }

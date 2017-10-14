@@ -1,25 +1,29 @@
-const { CQRS } = require('../../src/cqrs/CQRS');
-const { Auth } = require('../../src/auth/Auth');
-// const { Event } = require('../../src/cqrs/event/Event');
-require('./TodoExample');
-const { InMemoryAggregateEventStore } = require('../../src/cqrs/event/store/InMemoryAggregateEventStore');
-const UUID = require('uuid');
+import { suite, test, slow, timeout } from 'mocha-typescript';
+import { must } from 'must';
+import * as UUID from 'uuid';
+
+import { CQRS } from '../../src/cqrs/CQRS';
+import { Auth } from '../../src/auth/Auth';
+import { InMemoryAggregateEventStore } from '../../src/cqrs/event/store/InMemoryAggregateEventStore';
+import { CreateTodoCommand, TodoAggregate } from './TodoExample';
 
 const cqrs = new CQRS(new InMemoryAggregateEventStore());
+cqrs.registerAggregateClass('Todo', TodoAggregate);
 const issuerAuth = new Auth('user', 'userId1', ['registered']);
 
-describe('cqrs', () => {
-  describe('Can execute command', () => {
-    it('Creates a Todo when the command is executed', () => {
+suite('cqrs', () => {
+  suite('Can execute command', () => {
+    test('Creates a Todo when the command is executed', () => {
       const aggregateId = UUID.v4();
       cqrs.executeCommand(CQRS.deserialiseCommand({ aggregateId, issuerAuth, title: 'Test title', description: 'Test description' },
         'CreateTodoCommand'));
-      const aggregate = cqrs.getAggregate(aggregateId);
+      const aggregate: TodoAggregate = cqrs.getAggregate(aggregateId) as TodoAggregate;
+      aggregate.must.be.an.instanceOf(TodoAggregate);
       aggregate.title.must.equal('Test title');
       aggregate.description.must.equal('Test description');
       aggregate.status.must.equal('NotDone');
     });
-    it('Validates the command on execution', () => {
+    test('Validates the command on execution', () => {
       const aggregateId = UUID.v4();
       try {
         cqrs.executeCommand(CQRS.deserialiseCommand({ aggregateId, issuerAuth, title: 'Test title' }, 'CreateTodoCommand'));
@@ -29,51 +33,51 @@ describe('cqrs', () => {
         e.cause.must.be.an.error('Need to specify a description for the Todo');
       }
     });
-    it('Can be marked as done', () => {
+    test('Can be marked as done', () => {
       const aggregateId = UUID.v4();
       const executionContext = cqrs.newExecutionContext();
-      executionContext.addCommandToExecute(CQRS.deserialiseCommand({
+      executionContext.addCommandToExecute(CQRS.deserialiseCommand<CreateTodoCommand>({
         aggregateId,
         issuerAuth,
         title: 'Test title',
         description: 'Test description' }, 'CreateTodoCommand'));
       executionContext.addCommandToExecute(CQRS.deserialiseCommand({ aggregateId, issuerAuth }, 'MarkTodoDoneCommand'));
       executionContext.commit();
-      const aggregate = cqrs.getAggregate(aggregateId);
+      const aggregate = cqrs.getAggregate(aggregateId) as TodoAggregate;
       aggregate.title.must.equal('Test title');
       aggregate.description.must.equal('Test description');
       aggregate.status.must.equal('Done');
     });
-    it('Aggregates survive execution contexts', () => {
+    test('Aggregates survive execution contexts', () => {
       const aggregateId = UUID.v4();
       const executionContext = cqrs.newExecutionContext();
       executionContext.addCommandToExecute(CQRS.deserialiseCommand({
         aggregateId,
         title: 'Test title',
         issuerAuth,
-        description: 'Test description'
+        description: 'Test description',
       }, 'CreateTodoCommand'));
       executionContext.commit();
-      const aggregate = cqrs.getAggregate(aggregateId);
+      const aggregate = cqrs.getAggregate(aggregateId) as TodoAggregate;
       aggregate.title.must.equal('Test title');
       aggregate.description.must.equal('Test description');
       aggregate.status.must.equal('NotDone');
       const executionContext2 = cqrs.newExecutionContext();
       executionContext2.addCommandToExecute(CQRS.deserialiseCommand({ aggregateId, issuerAuth }, 'MarkTodoDoneCommand'));
       executionContext2.commit();
-      const aggregate2 = cqrs.getAggregate(aggregateId);
+      const aggregate2 = cqrs.getAggregate(aggregateId) as TodoAggregate;
       aggregate2.title.must.equal('Test title');
       aggregate2.description.must.equal('Test description');
       aggregate2.status.must.equal('Done');
     });
-    it('Only the creator can mark the TODO as done', () => {
+    test('Only the creator can mark the TODO as done', () => {
       const aggregateId = UUID.v4();
       const executionContext = cqrs.newExecutionContext();
       executionContext.addCommandToExecute(CQRS.deserialiseCommand({
         aggregateId,
         title: 'Test title',
         issuerAuth,
-        description: 'Test description'
+        description: 'Test description',
       }, 'CreateTodoCommand'));
       executionContext.commit();
 

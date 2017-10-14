@@ -11,7 +11,8 @@
     "lint": "tslint -p . --type-check",
     "prepublishOnly": "npm run clean && tsc && npm test && npm run lint",
     "precommit": "npm run lint",
-    "prepush": "node .checkpush.js"
+    "prepush": "node .checkpush.js",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,7 @@
     "test": "test"
   },
   "dependencies": {
+    "@types/uuid": "^3.4.2",
     "jsonwebtoken": "7.3.0",
     "uuid": "3.0.1"
   },
