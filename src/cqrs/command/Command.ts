@@ -13,11 +13,13 @@ interface Glue {
 export type CommandOptions = {
   issuerAuth?: Auth,
   commandId?: string,
+  commandTimestamp: number,
 };
 
 export abstract class Command {
   issuerAuth: Auth;
   commandId: string;
+  commandTimestamp: number;
   static commandClasses = new Map<string, Function>();
 
   /**
@@ -28,6 +30,7 @@ export abstract class Command {
    */
   constructor(obj: CommandOptions) {
     this.issuerAuth = obj.issuerAuth;
+    this.commandTimestamp = obj.commandTimestamp || new Date().getTime();
     this.commandId = obj.commandId || this.getIdGenerator().generate(this.constructor.name);
     this[commandFieldType] = this.constructor.name;
   }
@@ -36,6 +39,12 @@ export abstract class Command {
   }
   getCommandType(): string {
     return this[commandFieldType];
+  }
+  /**
+   * The unix timestamp (milliseconds since Epoch) when this command was issued
+   */
+  getCommandTimestamp(): number {
+    return this.commandTimestamp;
   }
 // eslint-disable-next-line no-unused-vars
   abstract validate(executionContext: ExecutionContext);
