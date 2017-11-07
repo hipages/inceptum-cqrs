@@ -7,16 +7,19 @@ const defaultGenerator = new UUIDGenerator();
 export type EventOptions = {
   issuerCommandId: string,
   eventId?: string,
+  eventTimestamp?: number,
 };
 
 export class Event {
   eventId: string;
+  eventTimestamp: number;
   issuerCommandId: string;
   static eventClasses = new Map<string, Function>();
 
   constructor(obj: EventOptions) {
     this.issuerCommandId = obj.issuerCommandId;
     this.eventId = obj.eventId || this.getIdGenerator().generate(this.constructor.name);
+    this.eventTimestamp = obj.eventTimestamp || new Date().getTime();
     this[eventTypeField] = this.constructor.name;
   }
   getEventId(): string {
@@ -24,6 +27,12 @@ export class Event {
   }
   getIssuerCommandId(): string {
     return this.issuerCommandId;
+  }
+  /**
+   * The unix timestamp (milliseconds since Epoch) when this event was emitted
+   */
+  getEventTimestamp(): number {
+    return this.eventTimestamp;
   }
   // copyFrom(from: Object, properties: Array<string>, defaults?: Object) {
   //   properties.forEach((p) => {
