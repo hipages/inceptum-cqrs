@@ -13,7 +13,7 @@ interface Glue {
 export type CommandOptions = {
   issuerAuth?: Auth,
   commandId?: string,
-  commandTimestamp: number,
+  commandTimestamp?: number,
 };
 
 export abstract class Command {

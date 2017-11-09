@@ -4,7 +4,7 @@ import { AggregateCommand, AggregateCommandOptions } from './AggregateCommand';
 
 const defaultGenerator = new UUIDGenerator();
 
-export type AggregateCreatingCommandOptions = AggregateCommandOptions & {aggregateType: string};
+export type AggregateCreatingCommandOptions = AggregateCommandOptions & {aggregateType?: string};
 
 
 export abstract class AggregateCreatingCommand extends AggregateCommand {
