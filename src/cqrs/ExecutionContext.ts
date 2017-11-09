@@ -21,6 +21,7 @@ export class ExecutionContext extends AggregateEventStore {
   eventsToEmit: AggregateEvent[];
   status: Status;
   aggregateEventStore: AggregateEventStore;
+  aggregateClasses = new Map<string, Function>();
   /**
    * Constructs a new instance of ExecutionContext
    * @param {AggregateEventStore} aggregateEventStore The store to commit events to
@@ -81,7 +82,9 @@ export class ExecutionContext extends AggregateEventStore {
     if (!(firstEvent instanceof AggregateCreatingEvent)) {
       throw new Error(`The first event of aggregate ${aggregateId} is not an AggregateCreatingEvent. Panic!`);
     }
-    const aggregate = new Aggregate(firstEvent.getAggregateType(), firstEvent.getAggregateId());
+    const aggregateType = firstEvent.getAggregateType();
+    const aggregateClass = this.aggregateClasses.has(aggregateType) ? this.aggregateClasses.get(aggregateType) : Aggregate;
+    const aggregate = new (aggregateClass as any)(firstEvent.getAggregateType(), firstEvent.getAggregateId());
     allEvents.forEach((e) => e.apply(aggregate));
     return aggregate;
   }
@@ -153,7 +156,10 @@ export class ExecutionContext extends AggregateEventStore {
     return result;
   }
 
-   getEventsOf(aggregateId: string): Array<AggregateEvent> {
+  getEventsOf(aggregateId: string): Array<AggregateEvent> {
     return this.aggregateEventStore.getEventsOf(aggregateId);
+  }
+  setAggregateClasses(aggregateClasses: Map<string, Function>) {
+    this.aggregateClasses = aggregateClasses;
   }
 }
