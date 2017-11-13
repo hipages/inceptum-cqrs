@@ -13,3 +13,4 @@ export { Event, EventOptions } from './cqrs/event/Event';
 export { AggregateEventStore } from './cqrs/event/store/AggregateEventStore';
 export { InMemoryAggregateEventStore } from './cqrs/event/store/InMemoryAggregateEventStore';
 export { ExecutionContext } from './cqrs/ExecutionContext';
+export { TransientEvent } from './cqrs/event/TransientEvent';
