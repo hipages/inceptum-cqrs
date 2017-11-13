@@ -1,3 +1,4 @@
+import { isTransientEvent } from '../TransientEvent';
 import { AggregateEvent } from '../AggregateEvent';
 import { AggregateEventStore } from './AggregateEventStore';
 
@@ -26,6 +27,9 @@ export class InMemoryAggregateEventStore extends AggregateEventStore {
    */
 // eslint-disable-next-line no-unused-vars
   commitEvent(aggregateEvent: AggregateEvent) {
+    if (isTransientEvent(aggregateEvent)) {
+      return;
+    }
     // console.log(JSON.stringify(aggregateEvent));
     const aggregateId = aggregateEvent.getAggregateId();
     if (!this.store.has(aggregateId)) {
