@@ -16,12 +16,12 @@ class CacheInvalidatingAggregateEventStore extends AggregateEventStore {
     this.baseEventStore = baseEventStore;
     this.cache = cache;
   }
-  getEventsOf(aggregateId: string): AggregateEvent[] {
-    return this.baseEventStore.getEventsOf(aggregateId);
+  async getEventsOf(aggregateId: string): Promise<AggregateEvent[]> {
+    return await this.baseEventStore.getEventsOf(aggregateId);
   }
-  commitEvent(aggregateEvent: AggregateEvent): void {
+  async commitEvent(aggregateEvent: AggregateEvent): Promise<void> {
     this.cache.del(aggregateEvent.getAggregateId());
-    this.baseEventStore.commitEvent(aggregateEvent);
+    await this.baseEventStore.commitEvent(aggregateEvent);
   }
 }
 
@@ -49,30 +49,30 @@ export class CQRS {
 
   /**
    * Executes a single command and return the ExecutionContext
-   * @param {Command} The command to execute
+   * @param {Command[]} commands The command to execute
    * @returns {ExecutionContext} The execution context of the command
    */
-  executeCommand(command: Command) {
+  async executeCommand(...commands: Command[]): Promise<ExecutionContext> {
     const executionContext = this.newExecutionContext();
-    executionContext.executeCommand(command);
+    await executionContext.executeCommand(...commands);
     return executionContext;
   }
-  getAggregateAs<T extends Aggregate>(aggregateId: string): T {
-    return this.getAggregate(aggregateId) as T;
+  async getAggregateAs<T extends Aggregate>(aggregateId: string): Promise<T> {
+    return (await this.getAggregate(aggregateId)) as T;
   }
-  getAggregate(aggregateId: string): Aggregate {
+  async getAggregate(aggregateId: string): Promise<Aggregate> {
     const cachedAggregate = this.aggregateCache.get(aggregateId);
     if (cachedAggregate) {
       return cachedAggregate;
     }
-    const aggregate = this.getAggregateInternal(aggregateId);
+    const aggregate = await this.getAggregateInternal(aggregateId);
     if (aggregate) {
       this.aggregateCache.set(aggregateId, aggregate);
     }
     return aggregate;
   }
-  private getAggregateInternal(aggregateId: string): Aggregate {
-    const allEvents = this.aggregateEventStore.getEventsOf(aggregateId);
+  private async getAggregateInternal(aggregateId: string): Promise<Aggregate> {
+    const allEvents = await this.aggregateEventStore.getEventsOf(aggregateId);
     if (!allEvents || allEvents.length === 0) {
       return null;
     }
@@ -80,9 +80,7 @@ export class CQRS {
     if (!(firstEvent instanceof AggregateCreatingEvent)) {
       throw new Error(`The first event of aggregate ${aggregateId} is not an AggregateCreatingEvent. Panic!`);
     }
-    const aggregateType = firstEvent.getAggregateType();
-    const aggregateClass = this.aggregateClasses.has(aggregateType) ? this.aggregateClasses.get(aggregateType) : Aggregate;
-    const aggregate = new (aggregateClass as any)(firstEvent.getAggregateType(), firstEvent.getAggregateId());
+    const aggregate = this.instantiateAggregate(firstEvent.getAggregateType(), firstEvent.getAggregateId());
     allEvents.forEach((e) => e.apply(aggregate));
     return aggregate;
   }
@@ -91,5 +89,9 @@ export class CQRS {
   }
   registerAggregateClass(name: string, aggregateClass: Function) {
     this.aggregateClasses.set(name, aggregateClass);
+  }
+  private instantiateAggregate(aggregateType: string, aggregateId: string): Aggregate {
+    const aggregateClass = this.aggregateClasses.has(aggregateType) ? this.aggregateClasses.get(aggregateType) : Aggregate;
+    return new (aggregateClass as any)(aggregateType, aggregateId);
   }
 }

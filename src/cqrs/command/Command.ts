@@ -47,23 +47,23 @@ export abstract class Command {
     return this.commandTimestamp;
   }
 // eslint-disable-next-line no-unused-vars
-  abstract validate(executionContext: ExecutionContext);
+  abstract async validate(executionContext: ExecutionContext): Promise<void>;
 
 // eslint-disable-next-line no-unused-vars
-  abstract doExecute(executionContext: ExecutionContext);
+  abstract async doExecute(executionContext: ExecutionContext): Promise<void>;
 
 // eslint-disable-next-line no-unused-vars
-  abstract validateAuth(executionContext: ExecutionContext);
+  abstract async validateAuth(executionContext: ExecutionContext): Promise<void>;
 
   /**
    * Executed this command as part of the execution context.
    * @param {ExecutionContext} executionContext
    * @returns {*}
    */
-  execute(executionContext: ExecutionContext) {
-    this.validate(executionContext);
-    this.validateAuth(executionContext);
-    this.doExecute(executionContext);
+  async execute(executionContext: ExecutionContext): Promise<void> {
+    await this.validate(executionContext);
+    await this.validateAuth(executionContext);
+    await this.doExecute(executionContext);
   }
   getIssuerAuth(): Auth {
     return this.issuerAuth;

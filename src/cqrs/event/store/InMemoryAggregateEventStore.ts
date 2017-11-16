@@ -14,7 +14,7 @@ export class InMemoryAggregateEventStore extends AggregateEventStore {
    * @returns {AggregateEvent[]} The list of aggregate events of this aggregate
    */
 // eslint-disable-next-line no-unused-vars
-  getEventsOf(aggregateId: string): Array<AggregateEvent> {
+  async getEventsOf(aggregateId: string): Promise<Array<AggregateEvent>> {
     const eventStrArr = this.store.get(aggregateId);
     if (!eventStrArr || eventStrArr.length === 0) {
       return [];
@@ -26,7 +26,7 @@ export class InMemoryAggregateEventStore extends AggregateEventStore {
    * @param {AggregateEvent} aggregateEvent The aggregate event to store
    */
 // eslint-disable-next-line no-unused-vars
-  commitEvent(aggregateEvent: AggregateEvent) {
+  async commitEvent(aggregateEvent: AggregateEvent): Promise<void> {
     if (isTransientEvent(aggregateEvent)) {
       return;
     }

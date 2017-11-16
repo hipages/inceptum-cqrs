@@ -1,3 +1,4 @@
+import { ExecutionContext } from '../../src/cqrs/ExecutionContext';
 import { Aggregate } from '../../src/cqrs/Aggregate';
 import { Event } from '../../src/cqrs/event/Event';
 import { AggregateEventOptions } from '../../src/cqrs/event/AggregateEvent';
@@ -60,8 +61,8 @@ export class CreateTodoCommand extends AggregateCreatingCommand {
     this.description = obj.description;
     this.aggregateId = obj.aggregateId;
   }
-  doExecuteWithAggregate(executionContext, aggregate) {
-    executionContext.commitEvent(new TodoCreatedEvent({
+  async doExecuteWithAggregate(executionContext: ExecutionContext, aggregate) {
+    await executionContext.commitEvent(new TodoCreatedEvent({
       aggregateId: this.getAggregateId(),
       issuerCommandId: this.getCommandId(),
       title: this.title,
@@ -69,7 +70,7 @@ export class CreateTodoCommand extends AggregateCreatingCommand {
       creator: this.getIssuerAuth().getFullId(),
     }));
   }
-  validateWithAggregate() {
+  async validateWithAggregate() {
     if (!this.title) {
       throw new Error('Need to specify a title for the Todo');
     }
@@ -77,7 +78,7 @@ export class CreateTodoCommand extends AggregateCreatingCommand {
       throw new Error('Need to specify a description for the Todo');
     }
   }
-  validateAuthWithAggregate() {
+  async validateAuthWithAggregate() {
     if (this.issuerAuth.getType() !== 'user') {
       throw new Error(`Only users can execute this command. Provided auth for an entity of type ${this.issuerAuth.getType()}`);
     }
@@ -85,20 +86,20 @@ export class CreateTodoCommand extends AggregateCreatingCommand {
 }
 
 export class MarkTodoDoneCommand extends AggregateCommand {
-  doExecuteWithAggregate(executionContext) {
-    executionContext.commitEvent(new TodoMarkedDoneEvent({
+  async doExecuteWithAggregate(executionContext) {
+    await executionContext.commitEvent(new TodoMarkedDoneEvent({
       aggregateId: this.getAggregateId(),
       issuerCommandId: this.getCommandId(),
     }));
   }
-  validateAuthWithAggregate(executionContext, aggregate) {
+  async validateAuthWithAggregate(executionContext, aggregate) {
     const roles = this.getRolesForAggregate(aggregate);
     if (roles.indexOf('creator') < 0) {
       throw new Error('Only the creator of the Todo can mark it as done');
     }
   }
   // tslint:disable-next-line:prefer-function-over-method
-  validateWithAggregate(executionContext, aggregate) {
+  async validateWithAggregate(executionContext, aggregate) {
     if (aggregate.status !== 'NotDone') {
       throw new Error('Aggregate is not currently in NotDone');
     }

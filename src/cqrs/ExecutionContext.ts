@@ -42,7 +42,7 @@ export class ExecutionContext extends AggregateEventStore {
    * commands have been executed and the execution has been successful.
    * @param {aggregateEvent} aggregateEvent The aggregate event to store
    */
-  commitEvent(event: AggregateEvent): void {
+  async commitEvent(event: AggregateEvent): Promise<void> {
     this.validateNotCommitted();
     if (event && (event instanceof AggregateEvent)) {
       this.eventsToEmit.push(event);
@@ -68,11 +68,11 @@ export class ExecutionContext extends AggregateEventStore {
       throw new Error('ExecutionContext is already committed. Can\'t perform additional actions');
     }
   }
-  getAggregate(aggregateId) {
+  async getAggregate(aggregateId): Promise<Aggregate> {
     // if (this.aggregateCache.has(aggregateId)) {
     //   return this.aggregateCache.get(aggregateId);
     // }
-    const aggregateEvents = this.aggregateEventStore.getEventsOf(aggregateId) || [];
+    const aggregateEvents = (await this.aggregateEventStore.getEventsOf(aggregateId)) || [];
     const uncommittedEvents = this.getUncommittedEventsOf(aggregateId) || [];
     const allEvents = aggregateEvents.concat(uncommittedEvents);
     if (allEvents.length === 0) {
@@ -82,12 +82,16 @@ export class ExecutionContext extends AggregateEventStore {
     if (!(firstEvent instanceof AggregateCreatingEvent)) {
       throw new Error(`The first event of aggregate ${aggregateId} is not an AggregateCreatingEvent. Panic!`);
     }
-    const aggregateType = firstEvent.getAggregateType();
-    const aggregateClass = this.aggregateClasses.has(aggregateType) ? this.aggregateClasses.get(aggregateType) : Aggregate;
-    const aggregate = new (aggregateClass as any)(firstEvent.getAggregateType(), firstEvent.getAggregateId());
+    const aggregate = this.instantiateAggregate(firstEvent.getAggregateType(), firstEvent.getAggregateId());
     allEvents.forEach((e) => e.apply(aggregate));
     return aggregate;
   }
+
+  private instantiateAggregate(aggregateType: string, aggregateId: string): Aggregate {
+    const aggregateClass = this.aggregateClasses.has(aggregateType) ? this.aggregateClasses.get(aggregateType) : Aggregate;
+    return new (aggregateClass as any)(aggregateType, aggregateId);
+  }
+
   /**
    * Get all uncommitted events for the given aggregate id
    * @private
@@ -101,17 +105,19 @@ export class ExecutionContext extends AggregateEventStore {
    * {@link commit}
    * @param {AggregateCommand} command The command to execute
    */
-  executeCommand(command) {
+  async executeCommand(...commands) {
     this.validateNotCommitted();
-    this.addCommandToExecute(command);
-    this.commit();
+    commands.forEach((command) => {
+      this.addCommandToExecute(command);
+    });
+    await this.commit();
   }
   /**
    * Commits the execution context.
    * This essentially will go through all commands pending execution and will call them in order. It will
    * fail on the first error that gets thrown by any of the commands, and this won't be able to be committed.
    */
-  commit() {
+  async commit() {
     this.validateNotCommitted();
     if (this.status === Status.COMMITTING) {
       throw new Error('ExecutionContext is already committing. Don\'t call commit directly, just call addCommandToExecute');
@@ -120,10 +126,10 @@ export class ExecutionContext extends AggregateEventStore {
     while (this.commandsToExecute.length > 0) {
       const command = this.commandsToExecute.shift();
       const aggregate = (command instanceof AggregateCreatingCommand) ?
-        new Aggregate(command.getAggregateType(), command.getAggregateId()) :
-        this.getAggregate(command.getAggregateId());
+        this.instantiateAggregate(command.getAggregateType(), command.getAggregateId()) :
+        await this.getAggregate(command.getAggregateId());
       try {
-        command.executeWithAggregate(this, aggregate);
+        await command.executeWithAggregate(this, aggregate);
       } catch (e) {
         this.committed = true;
         this.error = new Error(`There was an error executing command ${command}`);
@@ -134,7 +140,7 @@ export class ExecutionContext extends AggregateEventStore {
     // All commands executed correctly
     this.status = Status.COMMITTED;
     try {
-      this.aggregateEventStore.commitAllEvents(this.eventsToEmit);
+      await this.aggregateEventStore.commitAllEvents(this.eventsToEmit);
     } catch (e) {
       this.error = new Error('There was an error saving events');
       this.error['cause'] = e;
@@ -156,8 +162,8 @@ export class ExecutionContext extends AggregateEventStore {
     return result;
   }
 
-  getEventsOf(aggregateId: string): Array<AggregateEvent> {
-    return this.aggregateEventStore.getEventsOf(aggregateId);
+  async getEventsOf(aggregateId: string): Promise<Array<AggregateEvent>> {
+    return await this.aggregateEventStore.getEventsOf(aggregateId);
   }
   setAggregateClasses(aggregateClasses: Map<string, Function>) {
     this.aggregateClasses = aggregateClasses;

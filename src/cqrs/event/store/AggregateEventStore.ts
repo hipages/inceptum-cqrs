@@ -7,21 +7,21 @@ export abstract class AggregateEventStore {
    * @param {string} aggregateId The id of the aggregate whose events we want to load
    * @returns {AggregateEvent[]} The list of aggregate events of this aggregate
    */
-  abstract getEventsOf(aggregateId: string): Array<AggregateEvent>;
+  abstract async getEventsOf(aggregateId: string): Promise<Array<AggregateEvent>>;
 
   /**
    * Saves an aggregate event to the persistent store
    * @param {AggregateEvent} aggregateEvent The aggregate event to store
    */
-  abstract commitEvent(aggregateEvent: AggregateEvent): void;
+  abstract async commitEvent(aggregateEvent: AggregateEvent): Promise<void>;
 
   /**
    * Saves a list of aggregate events to the persistent store
    * @param {AggregateEvent[]} aggregateEvents The array of aggregate events to store
    */
 
-  commitAllEvents(aggregateEvents: Array<AggregateEvent>): void {
-    aggregateEvents.forEach((event) => this.commitEvent(event));
+  async commitAllEvents(aggregateEvents: Array<AggregateEvent>): Promise<void> {
+    await Promise.all(aggregateEvents.map(async (event) => await this.commitEvent(event)));
   }
   /**
    * Serialises an aggregate event for storage

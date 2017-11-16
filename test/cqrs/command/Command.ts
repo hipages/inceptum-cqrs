@@ -21,16 +21,16 @@ class TestCommand1 extends AggregateCommand {
   }
 
   // tslint:disable-next-line
-  validateWithAggregate(executionContext, aggregate) {
+  async validateWithAggregate(executionContext, aggregate) {
   }
 
   // tslint:disable-next-line
-  doExecuteWithAggregate(executionContext, aggregate) {
+  async doExecuteWithAggregate(executionContext, aggregate) {
     throw new Error('Not implemented yet.');
   }
 
   // tslint:disable-next-line
-  validateAuthWithAggregate(executionContext, aggregate) {
+  async validateAuthWithAggregate(executionContext, aggregate) {
     throw new Error('Not implemented yet.');
   }
 }

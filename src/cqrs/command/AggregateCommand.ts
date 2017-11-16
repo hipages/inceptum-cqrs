@@ -26,10 +26,10 @@ export abstract class AggregateCommand extends Command {
    * @param {ExecutionContext} executionContext The execution context for this command to run on
    * @param {Aggregate} aggregate The aggregate this command will execute on
    */
-  abstract validateWithAggregate(executionContext, aggregate);
+  abstract async validateWithAggregate(executionContext, aggregate): Promise<void>;
 
   // tslint:disable-next-line:prefer-function-over-method
-  validate(executionContext: ExecutionContext) {
+  async validate(executionContext: ExecutionContext): Promise<void> {
     throw new Error('Please call validateWithAggregate instead');
   }
 
@@ -39,10 +39,10 @@ export abstract class AggregateCommand extends Command {
    * @param {ExecutionContext} executionContext The execution context for this command to run on
    * @param {Aggregate} aggregate The aggregate this command will execute on
    */
-  abstract doExecuteWithAggregate(executionContext, aggregate);
+  abstract async doExecuteWithAggregate(executionContext, aggregate): Promise<void>;
 
   // tslint:disable-next-line:prefer-function-over-method
-  doExecute(executionContext: ExecutionContext) {
+  async doExecute(executionContext: ExecutionContext): Promise<void> {
     throw new Error('Please call doExecuteWithAggregate instead');
   }
 
@@ -51,10 +51,10 @@ export abstract class AggregateCommand extends Command {
    * @param {ExecutionContext} executionContext The execution context for this command to run on
    * @param {Aggregate} aggregate The aggregate this command will execute on
    */
-  abstract validateAuthWithAggregate(executionContext, aggregate);
+  abstract async validateAuthWithAggregate(executionContext, aggregate): Promise<void>;
 
   // tslint:disable-next-line:prefer-function-over-method
-  validateAuth(executionContext: ExecutionContext) {
+  async validateAuth(executionContext: ExecutionContext): Promise<void> {
     throw new Error('Please call validateAuthWithAggregate');
   }
 
@@ -65,7 +65,7 @@ export abstract class AggregateCommand extends Command {
   }
 
   // tslint:disable-next-line:prefer-function-over-method
-  execute(executionContext) {
+  async execute(executionContext) {
     throw new Error('Please call executeWithAggregate instead');
   }
   /**
@@ -75,10 +75,10 @@ export abstract class AggregateCommand extends Command {
    * @param {ExecutionContext} executionContext The execution context for this command to run on
    * @param {Aggregate} aggregate The aggregate this command will execute on
    */
-  executeWithAggregate(executionContext, aggregate) {
-    this.validateWithAggregate(executionContext, aggregate);
-    this.validateAuthWithAggregate(executionContext, aggregate);
-    this.doExecuteWithAggregate(executionContext, aggregate);
+  async executeWithAggregate(executionContext, aggregate): Promise<void> {
+    await this.validateWithAggregate(executionContext, aggregate);
+    await this.validateAuthWithAggregate(executionContext, aggregate);
+    await this.doExecuteWithAggregate(executionContext, aggregate);
   }
 }
 
