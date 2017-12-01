@@ -41,4 +41,17 @@ export class Aggregate {
       this.aggregateRoles.set(entityId, roles);
     }
   }
+
+  removeAggregateRole(entityId: string, roles?: Array<string>) {
+    if (!this.aggregateRoles.has(entityId)) {
+      return; // Nothing to do.
+    }
+    if (!roles) {
+      this.aggregateRoles.delete(entityId);
+    } else {
+      const entityRoles = this.aggregateRoles.get(entityId);
+      const newRoles = entityRoles.filter((role) => roles.indexOf(role) < 0);
+      this.aggregateRoles.set(entityId, newRoles);
+    }
+  }
 }
