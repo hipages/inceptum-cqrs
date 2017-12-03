@@ -28,6 +28,9 @@ export class Event {
   getIssuerCommandId(): string {
     return this.issuerCommandId;
   }
+  getEventType(): string {
+    return this[eventTypeField];
+  }
   /**
    * The unix timestamp (milliseconds since Epoch) when this event was emitted
    */

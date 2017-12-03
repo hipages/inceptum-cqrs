@@ -1,3 +1,4 @@
+import { Stream } from 'stream';
 import * as lruCache from 'lru-cache';
 import { AggregateEventStore } from './event/store/AggregateEventStore';
 import { AggregateEvent } from './event/AggregateEvent';
@@ -9,12 +10,14 @@ import { AggregateCreatingEvent } from './event/AggregateCreatingEvent';
 const MAX_AGGREGATE_CACHE_ENTRIES = 1000;
 const MAX_AGGREGATE_CACHE_AGE = 1000 * 60 * 60; // one hour
 class CacheInvalidatingAggregateEventStore extends AggregateEventStore {
+  eventStream: Stream;
   cache: any;
   baseEventStore: AggregateEventStore;
-  constructor(baseEventStore: AggregateEventStore, cache) {
+  constructor(baseEventStore: AggregateEventStore, cache, eventStream: Stream) {
     super();
     this.baseEventStore = baseEventStore;
     this.cache = cache;
+    this.eventStream = eventStream;
   }
   async getEventsOf(aggregateId: string): Promise<AggregateEvent[]> {
     return await this.baseEventStore.getEventsOf(aggregateId);
@@ -22,6 +25,12 @@ class CacheInvalidatingAggregateEventStore extends AggregateEventStore {
   async commitEvent(aggregateEvent: AggregateEvent): Promise<void> {
     this.cache.del(aggregateEvent.getAggregateId());
     await this.baseEventStore.commitEvent(aggregateEvent);
+    this.eventStream.emit('event', aggregateEvent);
+  }
+  async commitAllEvents(aggregateEvents: AggregateEvent[]): Promise<void> {
+    aggregateEvents.forEach((aggregateEvent) => this.cache.del(aggregateEvent.getAggregateId()));
+    await this.baseEventStore.commitAllEvents(aggregateEvents);
+    aggregateEvents.forEach((aggregateEvent) => this.eventStream.emit('event', aggregateEvent));
   }
 }
 
@@ -29,6 +38,7 @@ export class CQRS {
   aggregateEventStore: AggregateEventStore;
   aggregateClasses = new Map<string, Function>();
   aggregateCache: any;
+  eventStream = new Stream();
 
   /**
    * Construct a new instance of the CQRS framework
@@ -39,12 +49,16 @@ export class CQRS {
       max: MAX_AGGREGATE_CACHE_ENTRIES,
       maxAge: MAX_AGGREGATE_CACHE_AGE,
     });
-    this.aggregateEventStore = new CacheInvalidatingAggregateEventStore(aggregateEventStore, this.aggregateCache);
+    this.aggregateEventStore = new CacheInvalidatingAggregateEventStore(aggregateEventStore, this.aggregateCache, this.eventStream);
   }
   newExecutionContext(): ExecutionContext {
     const execContext = new ExecutionContext(this.aggregateEventStore);
     execContext.setAggregateClasses(this.aggregateClasses);
     return execContext;
+  }
+
+  getEventStream(): Stream {
+    return this.eventStream;
   }
 
   /**
