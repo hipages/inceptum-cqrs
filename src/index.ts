@@ -7,6 +7,8 @@ export { AggregateCreatingCommand, AggregateCreatingCommandOptions } from './cqr
 export { Command, CommandOptions } from './cqrs/command/Command';
 export { CommandResult } from './cqrs/command/CommandResult';
 export { CQRS } from './cqrs/CQRS';
+export { CQRSPlugin } from './cqrs/plugin/CQRSPlugin';
+export { SwaggerCQRSMiddleware } from './cqrs/plugin/SwaggerCQRSMiddleware';
 export { AggregateCreatingEvent, AggregateCreatingEventOptions } from './cqrs/event/AggregateCreatingEvent';
 export { AggregateEvent, AggregateEventOptions } from './cqrs/event/AggregateEvent';
 export { Event, EventOptions } from './cqrs/event/Event';
