@@ -5,9 +5,11 @@ import * as UUID from 'uuid';
 import { CQRS } from '../../src/cqrs/CQRS';
 import { Auth } from '../../src/auth/Auth';
 import { InMemoryAggregateEventStore } from '../../src/cqrs/event/store/InMemoryAggregateEventStore';
-import { CreateTodoCommand, TodoAggregate } from './TodoExample';
+import { CreateTodoCommand, TodoAggregate, CreateTodoCommandExecutor, MarkTodoDoneCommandExecutor } from './TodoExample';
 
 const cqrs = new CQRS(new InMemoryAggregateEventStore());
+cqrs.registerCommandExecutor(new CreateTodoCommandExecutor());
+cqrs.registerCommandExecutor(new MarkTodoDoneCommandExecutor());
 cqrs.registerAggregateClass('Todo', TodoAggregate);
 const issuerAuth = new Auth('user', 'userId1', ['registered']);
 

@@ -1,3 +1,4 @@
+import { CommandExecutor } from './command/CommandExecutor';
 import { Command } from './command/Command';
 import { Aggregate } from './Aggregate';
 import { AggregateEvent } from './event/AggregateEvent';
@@ -14,6 +15,7 @@ export enum Status {
 }
 
 export class ExecutionContext extends AggregateEventStore {
+  commandExecutors: CommandExecutor<any, any>[];
   committed = false;
   commandResults: Map<string, CommandResult>;
   error: Error;
@@ -26,7 +28,7 @@ export class ExecutionContext extends AggregateEventStore {
    * Constructs a new instance of ExecutionContext
    * @param {AggregateEventStore} aggregateEventStore The store to commit events to
    */
-  constructor(aggregateEventStore: AggregateEventStore) {
+  constructor(aggregateEventStore: AggregateEventStore, commandExecutors: CommandExecutor<any, any>[]) {
     super();
     this.aggregateEventStore = aggregateEventStore;
     this.status = Status.NOT_COMMMITED;
@@ -34,6 +36,7 @@ export class ExecutionContext extends AggregateEventStore {
     this.commandsToExecute = [];
     this.error = null;
     this.commandResults = new Map<string, CommandResult>();
+    this.commandExecutors = commandExecutors;
     // this.aggregateCache = new Map();
   }
   /**
@@ -57,6 +60,9 @@ export class ExecutionContext extends AggregateEventStore {
    */
   addCommandToExecute(aggregateCommand: AggregateCommand) {
     this.validateNotCommitted();
+    if (this.commandExecutors.findIndex((executor) => executor.canExecute(aggregateCommand)) < 0) {
+      throw new Error(`Unknown command type: ${aggregateCommand.constructor.name}. There's no CommandExecutor registered for it`);
+    }
     this.commandsToExecute.push(aggregateCommand);
   }
   /**
@@ -125,11 +131,12 @@ export class ExecutionContext extends AggregateEventStore {
     this.status = Status.COMMITTING;
     while (this.commandsToExecute.length > 0) {
       const command = this.commandsToExecute.shift();
+      const commandExecutor = this.commandExecutors.find((executor) => executor.canExecute(command));
       const aggregate = (command instanceof AggregateCreatingCommand) ?
         this.instantiateAggregate(command.getAggregateType(), command.getAggregateId()) :
         await this.getAggregate(command.getAggregateId());
       try {
-        await command.executeWithAggregate(this, aggregate);
+        await commandExecutor.execute(command, this, aggregate);
       } catch (e) {
         this.committed = true;
         this.error = new Error(`There was an error executing command ${command}`);

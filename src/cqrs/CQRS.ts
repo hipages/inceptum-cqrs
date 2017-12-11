@@ -6,6 +6,7 @@ import { ExecutionContext } from './ExecutionContext';
 import { Aggregate } from './Aggregate';
 import { Command } from './command/Command';
 import { AggregateCreatingEvent } from './event/AggregateCreatingEvent';
+import { CommandExecutor } from './command/CommandExecutor';
 
 const MAX_AGGREGATE_CACHE_ENTRIES = 1000;
 const MAX_AGGREGATE_CACHE_AGE = 1000 * 60 * 60; // one hour
@@ -39,6 +40,7 @@ export class CQRS {
   aggregateClasses = new Map<string, Function>();
   aggregateCache: any;
   eventStream = new Stream();
+  commandExecutors: CommandExecutor<any, any>[] = [];
 
   /**
    * Construct a new instance of the CQRS framework
@@ -52,7 +54,7 @@ export class CQRS {
     this.aggregateEventStore = new CacheInvalidatingAggregateEventStore(aggregateEventStore, this.aggregateCache, this.eventStream);
   }
   newExecutionContext(): ExecutionContext {
-    const execContext = new ExecutionContext(this.aggregateEventStore);
+    const execContext = new ExecutionContext(this.aggregateEventStore, this.commandExecutors);
     execContext.setAggregateClasses(this.aggregateClasses);
     return execContext;
   }
@@ -107,5 +109,8 @@ export class CQRS {
   private instantiateAggregate(aggregateType: string, aggregateId: string): Aggregate {
     const aggregateClass = this.aggregateClasses.has(aggregateType) ? this.aggregateClasses.get(aggregateType) : Aggregate;
     return new (aggregateClass as any)(aggregateType, aggregateId);
+  }
+  public registerCommandExecutor<T extends Command, A extends Aggregate>(commandExecutor: CommandExecutor<T, A>) {
+    this.commandExecutors.push(commandExecutor);
   }
 }

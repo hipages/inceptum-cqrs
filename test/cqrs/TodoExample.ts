@@ -7,6 +7,7 @@ import { AggregateCommand } from '../../src/cqrs/command/AggregateCommand';
 import { AggregateCreatingCommand } from '../../src/cqrs/command/AggregateCreatingCommand';
 import { AggregateCreatingEvent, AggregateCreatingEventOptions } from '../../src/cqrs/event/AggregateCreatingEvent';
 import { AggregateEvent } from '../../src/cqrs/event/AggregateEvent';
+import { CommandExecutor } from '../../src/cqrs/command/CommandExecutor';
 
 export class TodoAggregate extends Aggregate {
   title: string;
@@ -61,48 +62,69 @@ export class CreateTodoCommand extends AggregateCreatingCommand {
     this.description = obj.description;
     this.aggregateId = obj.aggregateId;
   }
-  async doExecuteWithAggregate(executionContext: ExecutionContext, aggregate) {
+}
+
+export class CreateTodoCommandExecutor extends CommandExecutor<CreateTodoCommand, TodoAggregate> {
+  // tslint:disable-next-line:prefer-function-over-method
+  async doExecute(command: CreateTodoCommand, executionContext: ExecutionContext, aggregate) {
     await executionContext.commitEvent(new TodoCreatedEvent({
-      aggregateId: this.getAggregateId(),
-      issuerCommandId: this.getCommandId(),
-      title: this.title,
-      description: this.description,
-      creator: this.getIssuerAuth().getFullId(),
+      aggregateId: command.getAggregateId(),
+      issuerCommandId: command.getCommandId(),
+      title: command.title,
+      description: command.description,
+      creator: command.getIssuerAuth().getFullId(),
     }));
   }
-  async validateWithAggregate() {
-    if (!this.title) {
+  // tslint:disable-next-line:prefer-function-over-method
+  async validate(command: CreateTodoCommand) {
+    if (!command.title) {
       throw new Error('Need to specify a title for the Todo');
     }
-    if (!this.description) {
+    if (!command.description) {
       throw new Error('Need to specify a description for the Todo');
     }
   }
-  async validateAuthWithAggregate() {
-    if (this.issuerAuth.getType() !== 'user') {
-      throw new Error(`Only users can execute this command. Provided auth for an entity of type ${this.issuerAuth.getType()}`);
+  // tslint:disable-next-line:prefer-function-over-method
+  async validateAuth(command: CreateTodoCommand) {
+    if (command.issuerAuth.getType() !== 'user') {
+      throw new Error(`Only users can execute this command. Provided auth for an entity of type ${command.issuerAuth.getType()}`);
     }
+  }
+
+  // tslint:disable-next-line:prefer-function-over-method
+  public canExecute(command: Command): boolean {
+    return command instanceof CreateTodoCommand;
   }
 }
 
 export class MarkTodoDoneCommand extends AggregateCommand {
-  async doExecuteWithAggregate(executionContext) {
+}
+
+export class MarkTodoDoneCommandExecutor extends CommandExecutor<MarkTodoDoneCommand, TodoAggregate> {
+  // tslint:disable-next-line:prefer-function-over-method
+  async doExecute(command: MarkTodoDoneCommand, executionContext: ExecutionContext, aggregate?: TodoAggregate) {
     await executionContext.commitEvent(new TodoMarkedDoneEvent({
-      aggregateId: this.getAggregateId(),
-      issuerCommandId: this.getCommandId(),
+      aggregateId: command.getAggregateId(),
+      issuerCommandId: command.getCommandId(),
     }));
   }
-  async validateAuthWithAggregate(executionContext, aggregate) {
-    const roles = this.getRolesForAggregate(aggregate);
+  // tslint:disable-next-line:prefer-function-over-method
+  async validateAuth(command: MarkTodoDoneCommand, executionContext: ExecutionContext, aggregate?: TodoAggregate) {
+    const roles = command.getRolesForAggregate(aggregate);
     if (roles.indexOf('creator') < 0) {
       throw new Error('Only the creator of the Todo can mark it as done');
     }
   }
   // tslint:disable-next-line:prefer-function-over-method
-  async validateWithAggregate(executionContext, aggregate) {
+  async validate(command: MarkTodoDoneCommand, executionContext: ExecutionContext, aggregate?: TodoAggregate) {
     if (aggregate.status !== 'NotDone') {
       throw new Error('Aggregate is not currently in NotDone');
     }
+  }
+
+  // tslint:disable-next-line:prefer-function-over-method
+  public canExecute(command: Command): boolean {
+    return command instanceof MarkTodoDoneCommand;
   }
 }
 
