@@ -7,6 +7,7 @@ import { AggregateEventStore } from './event/store/AggregateEventStore';
 import { AggregateCreatingEvent } from './event/AggregateCreatingEvent';
 import { AggregateCreatingCommand } from './command/AggregateCreatingCommand';
 import { CommandResult } from './command/CommandResult';
+import { ReturnToCallerError } from './error/ReturnToCallerError';
 
 export enum Status {
   NOT_COMMMITED,
@@ -18,7 +19,7 @@ export class ExecutionContext extends AggregateEventStore {
   commandExecutors: CommandExecutor<any, any>[];
   committed = false;
   commandResults: Map<string, CommandResult>;
-  error: Error;
+  error: ReturnToCallerError;
   commandsToExecute: AggregateCommand[];
   eventsToEmit: AggregateEvent[];
   status: Status;
@@ -139,9 +140,14 @@ export class ExecutionContext extends AggregateEventStore {
         await commandExecutor.execute(command, this, aggregate);
       } catch (e) {
         this.committed = true;
-        this.error = new Error(`There was an error executing command ${command}`);
-        this.error['cause'] = e;
-        throw this.error;
+        if (e instanceof ReturnToCallerError) {
+          throw e;
+        } else {
+          // hide the actual error and return a custom error
+          this.error = new ReturnToCallerError(`There was an error executing command ${command}`);
+          this.error.cause = e;
+          throw this.error;
+        }
       }
     }
     // All commands executed correctly
@@ -149,9 +155,14 @@ export class ExecutionContext extends AggregateEventStore {
     try {
       await this.aggregateEventStore.commitAllEvents(this.eventsToEmit);
     } catch (e) {
-      this.error = new Error('There was an error saving events');
-      this.error['cause'] = e;
-      throw this.error;
+      if (e instanceof ReturnToCallerError) {
+        throw e;
+      } else {
+        // hide the actual error and return a custom error
+        this.error = new ReturnToCallerError('There was an error saving events');
+        this.error.cause = e;
+        throw this.error;
+      }
     }
   }
   getError() {
