@@ -1,6 +1,6 @@
 {
   "name": "inceptum-cqrs",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Extension to Inceptum to build apps based on CQRS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
