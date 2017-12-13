@@ -1,3 +1,4 @@
+import { ExtendedError } from 'inceptum';
 import { CommandExecutor } from './command/CommandExecutor';
 import { Command } from './command/Command';
 import { Aggregate } from './Aggregate';
@@ -19,7 +20,7 @@ export class ExecutionContext extends AggregateEventStore {
   commandExecutors: CommandExecutor<any, any>[];
   committed = false;
   commandResults: Map<string, CommandResult>;
-  error: ReturnToCallerError;
+  error: Error;
   commandsToExecute: AggregateCommand[];
   eventsToEmit: AggregateEvent[];
   status: Status;
@@ -141,11 +142,12 @@ export class ExecutionContext extends AggregateEventStore {
       } catch (e) {
         this.committed = true;
         if (e instanceof ReturnToCallerError) {
-          throw e;
+          // hide the actual error and return a custom error
+          this.error = new ReturnToCallerError(`There was an error executing command ${command}`, e.httpStatusCode, e);
+          throw this.error;
         } else {
           // hide the actual error and return a custom error
-          this.error = new ReturnToCallerError(`There was an error executing command ${command}`);
-          this.error.cause = e;
+          this.error = new ExtendedError(`There was an error executing command ${command}`, e);
           throw this.error;
         }
       }
@@ -156,11 +158,12 @@ export class ExecutionContext extends AggregateEventStore {
       await this.aggregateEventStore.commitAllEvents(this.eventsToEmit);
     } catch (e) {
       if (e instanceof ReturnToCallerError) {
-        throw e;
+        // hide the actual error and return a custom error
+        this.error = new ReturnToCallerError('There was an error saving events', e.httpStatusCode, e);
+        throw this.error;
       } else {
         // hide the actual error and return a custom error
-        this.error = new ReturnToCallerError('There was an error saving events');
-        this.error.cause = e;
+        this.error = new ExtendedError('There was an error saving events', e);
         throw this.error;
       }
     }
