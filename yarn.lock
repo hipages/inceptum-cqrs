@@ -1372,9 +1372,9 @@ imurmurhash@^0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/imurmurhash/-/imurmurhash-0.1.4.tgz#9218b9b2b928a238b13dc4fb6b6d576f231453ea"
 
-inceptum@^0.5.28:
-  version "0.5.28"
-  resolved "https://registry.yarnpkg.com/inceptum/-/inceptum-0.5.28.tgz#cdb72f275804c1d1064660615f0fe98284f6530a"
+inceptum@^0.5.32:
+  version "0.5.32"
+  resolved "https://registry.yarnpkg.com/inceptum/-/inceptum-0.5.32.tgz#afe7c8e05657f79dd9d093684ba882e255b9aa80"
   dependencies:
     "@types/axios" "^0.14.0"
     "@types/bunyan" "1.8.0"
@@ -1409,6 +1409,7 @@ inceptum@^0.5.28:
     pg "^7.0.2"
     prom-client "7.1.0"
     redis "2.6.5"
+    reflect-metadata "^0.1.10"
     source-map-support "^0.4.15"
     sqs-consumer "^3.7.0"
     striptags "^2.1.1"
@@ -1705,7 +1706,7 @@ json-stable-stringify@^1.0.1:
   dependencies:
     jsonify "~0.0.0"
 
-json-stringify-safe@5.0.1, "json-stringify-safe@>= 5 < 6", json-stringify-safe@^5.0.0, json-stringify-safe@~5.0.1:
+json-stringify-safe@5.0.1, "json-stringify-safe@>= 5 < 6", json-stringify-safe@^5.0.0, json-stringify-safe@^5.0.1, json-stringify-safe@~5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz#1296a2d58fd45f19a0f6ce01d65701e2c735b6eb"
 
@@ -2812,6 +2813,10 @@ redis@^0.10.3:
 reduce-component@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/reduce-component/-/reduce-component-1.0.1.tgz#e0c93542c574521bea13df0f9488ed82ab77c5da"
+
+reflect-metadata@^0.1.10:
+  version "0.1.10"
+  resolved "https://registry.yarnpkg.com/reflect-metadata/-/reflect-metadata-0.1.10.tgz#b4f83704416acad89988c9b15635d47e03b9344a"
 
 regenerator-runtime@^0.10.0:
   version "0.10.5"
