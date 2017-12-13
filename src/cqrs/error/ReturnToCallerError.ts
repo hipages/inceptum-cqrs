@@ -4,6 +4,7 @@ export class ReturnToCallerError extends Error {
   constructor(message: string, httpStatusCode = 500) {
     super(message);
     this.httpStatusCode = httpStatusCode;
+    this.name = 'ReturnToCallerError';
   }
 
   getInfoToReturn() {

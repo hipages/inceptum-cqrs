@@ -2,7 +2,7 @@ import { suite, test, slow, timeout } from 'mocha-typescript';
 import { must } from 'must';
 import * as UUID from 'uuid';
 
-import { CQRS, CQRSError, CQRSHttpResponse } from '../../src/cqrs/CQRS';
+import { CQRS } from '../../src/cqrs/CQRS';
 import { Auth } from '../../src/auth/Auth';
 import { InMemoryAggregateEventStore } from '../../src/cqrs/event/store/InMemoryAggregateEventStore';
 import { CreateTodoCommand, TodoAggregate, CreateTodoCommandExecutor, MarkTodoDoneCommandExecutor } from './TodoExample';
@@ -94,11 +94,6 @@ suite('cqrs', () => {
         e.must.be.an.error(/^There was an error executing command/);
         e.cause.must.be.an.error('Only the creator of the Todo can mark it as done');
       }
-    });
-    test('CQRS error object has all properties', async () => {
-      const errorMessage = 'Custom error message';
-      const httpErrorCode = 500;
-      const cqrsError = new CQRSError(errorMessage, httpErrorCode);
     });
   });
 });
