@@ -1,3 +1,4 @@
+import { ExtendedError } from 'inceptum';
 import { CommandExecutor } from './command/CommandExecutor';
 import { Command } from './command/Command';
 import { Aggregate } from './Aggregate';
@@ -7,6 +8,7 @@ import { AggregateEventStore } from './event/store/AggregateEventStore';
 import { AggregateCreatingEvent } from './event/AggregateCreatingEvent';
 import { AggregateCreatingCommand } from './command/AggregateCreatingCommand';
 import { CommandResult } from './command/CommandResult';
+import { ReturnToCallerError } from './error/ReturnToCallerError';
 
 export enum Status {
   NOT_COMMMITED,
@@ -139,9 +141,15 @@ export class ExecutionContext extends AggregateEventStore {
         await commandExecutor.execute(command, this, aggregate);
       } catch (e) {
         this.committed = true;
-        this.error = new Error(`There was an error executing command ${command}`);
-        this.error['cause'] = e;
-        throw this.error;
+        if (e instanceof ReturnToCallerError) {
+          // hide the actual error and return a custom error
+          this.error = new ReturnToCallerError(`There was an error executing command ${command}`, e.httpStatusCode, e);
+          throw this.error;
+        } else {
+          // hide the actual error and return a custom error
+          this.error = new ExtendedError(`There was an error executing command ${command}`, e);
+          throw this.error;
+        }
       }
     }
     // All commands executed correctly
@@ -149,9 +157,15 @@ export class ExecutionContext extends AggregateEventStore {
     try {
       await this.aggregateEventStore.commitAllEvents(this.eventsToEmit);
     } catch (e) {
-      this.error = new Error('There was an error saving events');
-      this.error['cause'] = e;
-      throw this.error;
+      if (e instanceof ReturnToCallerError) {
+        // hide the actual error and return a custom error
+        this.error = new ReturnToCallerError('There was an error saving events', e.httpStatusCode, e);
+        throw this.error;
+      } else {
+        // hide the actual error and return a custom error
+        this.error = new ExtendedError('There was an error saving events', e);
+        throw this.error;
+      }
     }
   }
   getError() {

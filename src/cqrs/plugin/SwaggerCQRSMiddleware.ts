@@ -1,12 +1,16 @@
-import { LogManager } from 'inceptum';
+import { LogManager, NewrelicUtil } from 'inceptum';
 import { Request } from 'express';
+import * as stringify from 'json-stringify-safe';
 import { CQRS } from '../CQRS';
 import { Command } from '../command/Command';
+import { ReturnToCallerError } from '../error/ReturnToCallerError';
 
-const logger = LogManager.getLogger();
+const logger = LogManager.getLogger(__filename);
 
 const SWAGGER_CQRS_COMMAND_PROPERTY = 'x-inceptum-cqrs-command';
 const SWAGGER_CQRS_GET_PROPERTY = 'x-inceptum-cqrs-get';
+
+const newrelic = NewrelicUtil.getNewrelicIfAvailable();
 
 export class SwaggerCQRSMiddleware {
   handlerCache: Map<any, any>;
@@ -128,6 +132,12 @@ export class SwaggerCQRSMiddleware {
    * @returns {*}
    */
   async handleCQRSGetWithName(req, res, aggregateName, paramName) {
+    if (newrelic && req.swagger && req.swagger.apiPath) {
+      // NR adds a `/` at the start of the path for us.
+      const basePath = req.swagger.swaggerObject.basePath.substring(1);
+      newrelic.setTransactionName(`${basePath}${req.swagger.apiPath}`);
+      newrelic.recordMetric(`Custom/CQRSGet/${aggregateName}`);
+    }
     const id = this.getPayload(req, paramName);
     const aggregate = await this.cqrs.getAggregate(id);
     if (!aggregate) {
@@ -150,21 +160,43 @@ export class SwaggerCQRSMiddleware {
     res.header('Cache-Control', 'no-cache, no-store, must-revalidate, private');
     res.header('Expires', '-1');
     res.header('Pragma', 'no-cache');
+    if (newrelic && req.swagger && req.swagger.apiPath) {
+      // NR adds a `/` at the start of the path for us.
+      const basePath = req.swagger.swaggerObject.basePath.substring(1);
+      newrelic.setTransactionName(`${basePath}${req.swagger.apiPath}`);
+      newrelic.recordMetric(`Custom/CQRSCommand/${commandName}`);
+    }
     const payload = this.getPayload(req, bodyParamName);
     const command = Command.fromObject(payload || {}, commandName);
-    const executionContext = await this.cqrs.executeCommand(command);
-    if (executionContext.hasCommandResultForCommand(command)) {
-      const commandResult = executionContext.getCommandResultForCommand(command);
-      if (commandResult.hasNewAggregateId()) {
-        res.header('Location', commandResult.getNewAggregateId());
-        res.status(201);
+    try {
+      const executionContext = await this.cqrs.executeCommand(command);
+
+      if (executionContext.hasCommandResultForCommand(command)) {
+        const commandResult = executionContext.getCommandResultForCommand(command);
+        if (commandResult.hasNewAggregateId()) {
+          res.header('Location', commandResult.getNewAggregateId());
+          res.status(201);
+        } else {
+          res.status(200);
+        }
+        res.send(commandResult);
       } else {
-        res.status(200);
+        res.status(204);
+        res.send('');
       }
-      res.send(commandResult);
-    } else {
-      res.status(204);
-      res.send('');
+    } catch (err) {
+      logger.error(err, `Exception executing command ${commandName}: ${stringify(command)}`);
+      if (newrelic) {
+        newrelic.noticeError(err);
+      }
+      if (err instanceof ReturnToCallerError) {
+        res.status(err.httpStatusCode);
+        res.send(err.getInfoToReturn());
+      } else {
+        const internalError = 'Internal Server Error';
+        res.status(500);
+        res.send({ message: internalError});
+      }
     }
   }
 

@@ -1,3 +1,5 @@
+import { ReturnToCallerError } from './cqrs/error/ReturnToCallerError';
+
 export { Auth, RolesObj } from './auth/Auth.js';
 export { AuthService, AuthServiceOptions } from './auth/service/AuthService';
 export { SigningAuthService } from './auth/service/SigningAuthService';
@@ -17,3 +19,6 @@ export { InMemoryAggregateEventStore } from './cqrs/event/store/InMemoryAggregat
 export { ExecutionContext } from './cqrs/ExecutionContext';
 export { CommandExecutor } from './cqrs/command/CommandExecutor';
 export * from './cqrs/event/TransientEvent';
+export { ReturnToCallerError } from './cqrs/error/ReturnToCallerError';
+export { ValidationError } from './cqrs/error/ValidationError';
+export { AuthorizationError } from './cqrs/error/AuthorizationError';
