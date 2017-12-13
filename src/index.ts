@@ -1,5 +1,3 @@
-import { ReturnToCallerError } from './cqrs/error/ReturnToCallerError';
-
 export { Auth, RolesObj } from './auth/Auth.js';
 export { AuthService, AuthServiceOptions } from './auth/service/AuthService';
 export { SigningAuthService } from './auth/service/SigningAuthService';

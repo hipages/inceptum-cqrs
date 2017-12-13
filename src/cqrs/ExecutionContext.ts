@@ -18,7 +18,6 @@ export enum Status {
 
 export class ExecutionContext extends AggregateEventStore {
   commandExecutors: CommandExecutor<any, any>[];
-  committed = false;
   commandResults: Map<string, CommandResult>;
   error: Error;
   commandsToExecute: AggregateCommand[];
@@ -140,7 +139,7 @@ export class ExecutionContext extends AggregateEventStore {
       try {
         await commandExecutor.execute(command, this, aggregate);
       } catch (e) {
-        this.committed = true;
+        this.status = Status.COMMITTED;
         if (e instanceof ReturnToCallerError) {
           // hide the actual error and return a custom error
           this.error = new ReturnToCallerError(`There was an error executing command ${command}`, e.httpStatusCode, e);
