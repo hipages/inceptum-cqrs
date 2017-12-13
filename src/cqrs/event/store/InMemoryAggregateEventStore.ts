@@ -1,12 +1,13 @@
-import { isTransientEvent } from '../TransientEvent';
-import { AggregateEvent } from '../AggregateEvent';
+import { EventExecutor } from '../EventExecutor';
 import { AggregateEventStore } from './AggregateEventStore';
 
 export class InMemoryAggregateEventStore extends AggregateEventStore {
   store: Map<string, any>;
-  constructor() {
+  eventExecutors: EventExecutor<any, any>[] = [];
+  constructor(eventExecutors: EventExecutor<any, any>[]) {
     super();
     this.store = new Map();
+    this.eventExecutors = eventExecutors;
   }
   /**
    * Load all the events of an aggregate
@@ -14,31 +15,31 @@ export class InMemoryAggregateEventStore extends AggregateEventStore {
    * @returns {AggregateEvent[]} The list of aggregate events of this aggregate
    */
 // eslint-disable-next-line no-unused-vars
-  async getEventsOf(aggregateId: string): Promise<Array<AggregateEvent>> {
+  async getEventsOf(aggregateId: string): Promise<Array<any>> {
     const eventStrArr = this.store.get(aggregateId);
     if (!eventStrArr || eventStrArr.length === 0) {
       return [];
     }
-    return eventStrArr.map((element) => this.deserialize(element), this);
+    return eventStrArr;
   }
   /**
    * Saves an aggregate event to the persistent store
    * @param {AggregateEvent} aggregateEvent The aggregate event to store
    */
 // eslint-disable-next-line no-unused-vars
-  async commitEvent(aggregateEvent: AggregateEvent): Promise<void> {
-    if (isTransientEvent(aggregateEvent)) {
-      return;
+  async commitEvent(aggregateEvent: any): Promise<void> {
+    const executor = EventExecutor.getEventExecutor(aggregateEvent, this.eventExecutors);
+    if (!executor) {
+      throw new Error(`Unknown event to commit ${aggregateEvent.constructor.name}`);
     }
-    // console.log(JSON.stringify(aggregateEvent));
-    const aggregateId = aggregateEvent.getAggregateId();
+    const aggregateId = executor.getAggregateId(aggregateEvent);
     if (!this.store.has(aggregateId)) {
       const events = [];
-      events.push(this.serialize(aggregateEvent));
+      events.push(aggregateEvent);
       this.store.set(aggregateId, events);
     } else {
       const events = this.store.get(aggregateId);
-      events.push(this.serialize(aggregateEvent));
+      events.push(aggregateEvent);
     }
   }
 }

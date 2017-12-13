@@ -1,35 +1,46 @@
 import { Stream } from 'stream';
 import * as lruCache from 'lru-cache';
 import { AggregateEventStore } from './event/store/AggregateEventStore';
-import { AggregateEvent } from './event/AggregateEvent';
 import { ExecutionContext } from './ExecutionContext';
 import { Aggregate } from './Aggregate';
 import { Command } from './command/Command';
-import { AggregateCreatingEvent } from './event/AggregateCreatingEvent';
 import { CommandExecutor } from './command/CommandExecutor';
+import { EventExecutor } from './event/EventExecutor';
 
 const MAX_AGGREGATE_CACHE_ENTRIES = 1000;
 const MAX_AGGREGATE_CACHE_AGE = 1000 * 60 * 60; // one hour
 class CacheInvalidatingAggregateEventStore extends AggregateEventStore {
+  eventExecutors: EventExecutor<any, any>[];
   eventStream: Stream;
   cache: any;
   baseEventStore: AggregateEventStore;
-  constructor(baseEventStore: AggregateEventStore, cache, eventStream: Stream) {
+  constructor(baseEventStore: AggregateEventStore, cache, eventStream: Stream, eventExecutors: EventExecutor<any, any>[]) {
     super();
     this.baseEventStore = baseEventStore;
     this.cache = cache;
     this.eventStream = eventStream;
+    this.eventExecutors = eventExecutors;
   }
-  async getEventsOf(aggregateId: string): Promise<AggregateEvent[]> {
+  async getEventsOf(aggregateId: string): Promise<any[]> {
     return await this.baseEventStore.getEventsOf(aggregateId);
   }
-  async commitEvent(aggregateEvent: AggregateEvent): Promise<void> {
-    this.cache.del(aggregateEvent.getAggregateId());
+  async commitEvent(aggregateEvent: any): Promise<void> {
+    const executor = EventExecutor.getEventExecutor(aggregateEvent, this.eventExecutors);
+    if (!executor) {
+      throw new Error(`Unknown event to commit ${aggregateEvent.constructor.name}`);
+    }
+    this.cache.del(executor.getAggregateId(aggregateEvent));
     await this.baseEventStore.commitEvent(aggregateEvent);
     this.eventStream.emit('event', aggregateEvent);
   }
-  async commitAllEvents(aggregateEvents: AggregateEvent[]): Promise<void> {
-    aggregateEvents.forEach((aggregateEvent) => this.cache.del(aggregateEvent.getAggregateId()));
+  async commitAllEvents(aggregateEvents: any[]): Promise<void> {
+    aggregateEvents.forEach((aggregateEvent) => {
+      const executor = EventExecutor.getEventExecutor(aggregateEvent, this.eventExecutors);
+      if (!executor) {
+        throw new Error(`Unknown event to commit ${aggregateEvent.constructor.name}`);
+      }
+      this.cache.del(executor.getAggregateId(aggregateEvent));
+    });
     await this.baseEventStore.commitAllEvents(aggregateEvents);
     aggregateEvents.forEach((aggregateEvent) => this.eventStream.emit('event', aggregateEvent));
   }
@@ -41,6 +52,7 @@ export class CQRS {
   aggregateCache: any;
   eventStream = new Stream();
   commandExecutors: CommandExecutor<any, any>[] = [];
+  eventExecutors: EventExecutor<any, any>[] = [];
 
   /**
    * Construct a new instance of the CQRS framework
@@ -51,10 +63,10 @@ export class CQRS {
       max: MAX_AGGREGATE_CACHE_ENTRIES,
       maxAge: MAX_AGGREGATE_CACHE_AGE,
     });
-    this.aggregateEventStore = new CacheInvalidatingAggregateEventStore(aggregateEventStore, this.aggregateCache, this.eventStream);
+    this.aggregateEventStore = new CacheInvalidatingAggregateEventStore(aggregateEventStore, this.aggregateCache, this.eventStream, this.eventExecutors);
   }
   newExecutionContext(): ExecutionContext {
-    const execContext = new ExecutionContext(this.aggregateEventStore, this.commandExecutors);
+    const execContext = new ExecutionContext(this.aggregateEventStore, this.commandExecutors, this.eventExecutors);
     execContext.setAggregateClasses(this.aggregateClasses);
     return execContext;
   }
@@ -92,13 +104,7 @@ export class CQRS {
     if (!allEvents || allEvents.length === 0) {
       return null;
     }
-    const firstEvent = allEvents[0];
-    if (!(firstEvent instanceof AggregateCreatingEvent)) {
-      throw new Error(`The first event of aggregate ${aggregateId} is not an AggregateCreatingEvent. Panic!`);
-    }
-    const aggregate = this.instantiateAggregate(firstEvent.getAggregateType(), firstEvent.getAggregateId());
-    allEvents.forEach((e) => e.apply(aggregate));
-    return aggregate;
+    return Aggregate.applyEvents(allEvents, this.eventExecutors, this.aggregateClasses);
   }
   static deserialiseCommand<T extends Command>(obj, commandType): T {
     return Command.fromObject(obj, commandType) as T;
@@ -112,5 +118,8 @@ export class CQRS {
   }
   public registerCommandExecutor<T extends Command, A extends Aggregate>(commandExecutor: CommandExecutor<T, A>) {
     this.commandExecutors.push(commandExecutor);
+  }
+  public registerEventExecutor<E, A extends Aggregate>(eventExecutor: EventExecutor<E, A>) {
+    this.eventExecutors.push(eventExecutor);
   }
 }

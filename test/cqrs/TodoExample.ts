@@ -1,12 +1,9 @@
+import { EventExecutor } from '../../src/cqrs/event/EventExecutor';
 import { ExecutionContext } from '../../src/cqrs/ExecutionContext';
 import { Aggregate } from '../../src/cqrs/Aggregate';
-import { Event } from '../../src/cqrs/event/Event';
-import { AggregateEventOptions } from '../../src/cqrs/event/AggregateEvent';
 import { Command } from '../../src/cqrs/command/Command';
 import { AggregateCommand } from '../../src/cqrs/command/AggregateCommand';
 import { AggregateCreatingCommand } from '../../src/cqrs/command/AggregateCreatingCommand';
-import { AggregateCreatingEvent, AggregateCreatingEventOptions } from '../../src/cqrs/event/AggregateCreatingEvent';
-import { AggregateEvent } from '../../src/cqrs/event/AggregateEvent';
 import { CommandExecutor } from '../../src/cqrs/command/CommandExecutor';
 
 export class TodoAggregate extends Aggregate {
@@ -15,41 +12,46 @@ export class TodoAggregate extends Aggregate {
   status: string;
 }
 
-export type TodoCreatedEventOptions = AggregateCreatingEventOptions & {
-  title: string,
-  description: string,
-  creator: string,
-};
 
-export class TodoCreatedEvent extends AggregateCreatingEvent {
-  creator: string;
-  description: string;
-  title: string;
-  constructor(obj: TodoCreatedEventOptions) {
-    obj.aggregateType = 'Todo';
-    super(obj);
-    this.title = obj.title;
-    this.description = obj.description;
-    this.creator = obj.creator;
-  }
-  apply(aggregate: TodoAggregate) {
-    aggregate.title = this.title;
-    aggregate.description = this.description;
-    aggregate.status = 'NotDone';
-    aggregate.addAggregateRole(this.creator, ['creator']);
+export class TodoCreatedEvent {
+  constructor(public title: string, public creator: string, public description: string, public aggregateId: string) {
   }
 }
 
-Event.registerEventClass(TodoCreatedEvent);
+export class TodoCreatedEventExecutor extends EventExecutor<TodoCreatedEvent, TodoAggregate> {
+  constructor() {
+    super(true, 'aggregateId', 'Todo');
+  }
 
-export class TodoMarkedDoneEvent extends AggregateEvent {
-  // tslint:disable-next-line:prefer-function-over-method
-  apply(aggregate) {
+  public canExecute(event: any): boolean {
+    return event instanceof TodoCreatedEvent;
+  }
+
+  public apply(event: TodoCreatedEvent, aggregate: TodoAggregate) {
+      aggregate.title = event.title;
+      aggregate.description = event.description;
+      aggregate.status = 'NotDone';
+      aggregate.addAggregateRole(event.creator, ['creator']);
+  }
+}
+
+export class TodoMarkedDoneEvent {
+  constructor(public aggregateId: string) {
+  }
+}
+
+export class TodoMarkedDoneEventExecutor extends EventExecutor<TodoMarkedDoneEvent, TodoAggregate> {
+  constructor() {
+    super(false, 'aggregateId');
+  }
+  public canExecute(event: any): boolean {
+    return event instanceof TodoMarkedDoneEvent;
+  }
+
+  public apply(event: TodoMarkedDoneEvent, aggregate: TodoAggregate) {
     aggregate.status = 'Done';
   }
 }
-
-Event.registerEventClass(TodoMarkedDoneEvent);
 
 export class CreateTodoCommand extends AggregateCreatingCommand {
   title: string;
@@ -67,13 +69,12 @@ export class CreateTodoCommand extends AggregateCreatingCommand {
 export class CreateTodoCommandExecutor extends CommandExecutor<CreateTodoCommand, TodoAggregate> {
   // tslint:disable-next-line:prefer-function-over-method
   async doExecute(command: CreateTodoCommand, executionContext: ExecutionContext, aggregate) {
-    await executionContext.commitEvent(new TodoCreatedEvent({
-      aggregateId: command.getAggregateId(),
-      issuerCommandId: command.getCommandId(),
-      title: command.title,
-      description: command.description,
-      creator: command.getIssuerAuth().getFullId(),
-    }));
+    await executionContext.commitEvent(new TodoCreatedEvent(
+      command.title,
+      command.getIssuerAuth().getFullId(),
+      command.description,
+      command.getAggregateId(),
+    ));
   }
   // tslint:disable-next-line:prefer-function-over-method
   async validate(command: CreateTodoCommand) {
@@ -103,10 +104,9 @@ export class MarkTodoDoneCommand extends AggregateCommand {
 export class MarkTodoDoneCommandExecutor extends CommandExecutor<MarkTodoDoneCommand, TodoAggregate> {
   // tslint:disable-next-line:prefer-function-over-method
   async doExecute(command: MarkTodoDoneCommand, executionContext: ExecutionContext, aggregate?: TodoAggregate) {
-    await executionContext.commitEvent(new TodoMarkedDoneEvent({
-      aggregateId: command.getAggregateId(),
-      issuerCommandId: command.getCommandId(),
-    }));
+    await executionContext.commitEvent(new TodoMarkedDoneEvent(
+      command.getAggregateId(),
+    ));
   }
   // tslint:disable-next-line:prefer-function-over-method
   async validateAuth(command: MarkTodoDoneCommand, executionContext: ExecutionContext, aggregate?: TodoAggregate) {

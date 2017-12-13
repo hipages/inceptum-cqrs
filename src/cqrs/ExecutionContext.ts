@@ -2,13 +2,12 @@ import { ExtendedError } from 'inceptum';
 import { CommandExecutor } from './command/CommandExecutor';
 import { Command } from './command/Command';
 import { Aggregate } from './Aggregate';
-import { AggregateEvent } from './event/AggregateEvent';
 import { AggregateCommand } from './command/AggregateCommand';
 import { AggregateEventStore } from './event/store/AggregateEventStore';
-import { AggregateCreatingEvent } from './event/AggregateCreatingEvent';
 import { AggregateCreatingCommand } from './command/AggregateCreatingCommand';
 import { CommandResult } from './command/CommandResult';
 import { ReturnToCallerError } from './error/ReturnToCallerError';
+import { EventExecutor } from './event/EventExecutor';
 
 export enum Status {
   NOT_COMMMITED,
@@ -17,11 +16,12 @@ export enum Status {
 }
 
 export class ExecutionContext extends AggregateEventStore {
+  eventExecutors: EventExecutor<any, any>[];
   commandExecutors: CommandExecutor<any, any>[];
   commandResults: Map<string, CommandResult>;
   error: Error;
   commandsToExecute: AggregateCommand[];
-  eventsToEmit: AggregateEvent[];
+  eventsToEmit: Object[];
   status: Status;
   aggregateEventStore: AggregateEventStore;
   aggregateClasses = new Map<string, Function>();
@@ -29,7 +29,7 @@ export class ExecutionContext extends AggregateEventStore {
    * Constructs a new instance of ExecutionContext
    * @param {AggregateEventStore} aggregateEventStore The store to commit events to
    */
-  constructor(aggregateEventStore: AggregateEventStore, commandExecutors: CommandExecutor<any, any>[]) {
+  constructor(aggregateEventStore: AggregateEventStore, commandExecutors: CommandExecutor<any, any>[], eventExecutors: EventExecutor<any, any>[]) {
     super();
     this.aggregateEventStore = aggregateEventStore;
     this.status = Status.NOT_COMMMITED;
@@ -38,6 +38,7 @@ export class ExecutionContext extends AggregateEventStore {
     this.error = null;
     this.commandResults = new Map<string, CommandResult>();
     this.commandExecutors = commandExecutors;
+    this.eventExecutors = eventExecutors;
     // this.aggregateCache = new Map();
   }
   /**
@@ -46,14 +47,9 @@ export class ExecutionContext extends AggregateEventStore {
    * commands have been executed and the execution has been successful.
    * @param {aggregateEvent} aggregateEvent The aggregate event to store
    */
-  async commitEvent(event: AggregateEvent): Promise<void> {
+  async commitEvent(event: any): Promise<void> {
     this.validateNotCommitted();
-    if (event && (event instanceof AggregateEvent)) {
-      this.eventsToEmit.push(event);
-      // this.aggregateCache.delete(event.getAggregateId());
-      return;
-    }
-    throw new Error('Provided event is not of type AggregateEvent');
+    this.eventsToEmit.push(event);
   }
   /**
    * Adds a command to the queue of commands to be executed.
@@ -76,27 +72,13 @@ export class ExecutionContext extends AggregateEventStore {
     }
   }
   async getAggregate(aggregateId): Promise<Aggregate> {
-    // if (this.aggregateCache.has(aggregateId)) {
-    //   return this.aggregateCache.get(aggregateId);
-    // }
     const aggregateEvents = (await this.aggregateEventStore.getEventsOf(aggregateId)) || [];
     const uncommittedEvents = this.getUncommittedEventsOf(aggregateId) || [];
     const allEvents = aggregateEvents.concat(uncommittedEvents);
     if (allEvents.length === 0) {
       return null;
     }
-    const firstEvent = allEvents[0];
-    if (!(firstEvent instanceof AggregateCreatingEvent)) {
-      throw new Error(`The first event of aggregate ${aggregateId} is not an AggregateCreatingEvent. Panic!`);
-    }
-    const aggregate = this.instantiateAggregate(firstEvent.getAggregateType(), firstEvent.getAggregateId());
-    allEvents.forEach((e) => e.apply(aggregate));
-    return aggregate;
-  }
-
-  private instantiateAggregate(aggregateType: string, aggregateId: string): Aggregate {
-    const aggregateClass = this.aggregateClasses.has(aggregateType) ? this.aggregateClasses.get(aggregateType) : Aggregate;
-    return new (aggregateClass as any)(aggregateType, aggregateId);
+    return Aggregate.applyEvents(allEvents, this.eventExecutors, this.aggregateClasses);
   }
 
   /**
@@ -105,8 +87,10 @@ export class ExecutionContext extends AggregateEventStore {
    * @param {string} aggregateId The id of the aggregate
    */
   getUncommittedEventsOf(aggregateId) {
-    return this.eventsToEmit.filter((e) => e.getAggregateId() === aggregateId);
+    return this.eventsToEmit.filter((e) => EventExecutor.getEventExecutor(e, this.eventExecutors).getAggregateId(e) === aggregateId);
   }
+
+
   /**
    * Executes a single command. This is a convenience method that calls both {@link addCommandToExecute} and
    * {@link commit}
@@ -134,7 +118,7 @@ export class ExecutionContext extends AggregateEventStore {
       const command = this.commandsToExecute.shift();
       const commandExecutor = this.commandExecutors.find((executor) => executor.canExecute(command));
       const aggregate = (command instanceof AggregateCreatingCommand) ?
-        this.instantiateAggregate(command.getAggregateType(), command.getAggregateId()) :
+        Aggregate.instantiateAggregate(command.getAggregateType(), command.getAggregateId(), this.aggregateClasses) :
         await this.getAggregate(command.getAggregateId());
       try {
         await commandExecutor.execute(command, this, aggregate);
@@ -182,7 +166,7 @@ export class ExecutionContext extends AggregateEventStore {
     return result;
   }
 
-  async getEventsOf(aggregateId: string): Promise<Array<AggregateEvent>> {
+  async getEventsOf(aggregateId: string): Promise<Array<any>> {
     return await this.aggregateEventStore.getEventsOf(aggregateId);
   }
   setAggregateClasses(aggregateClasses: Map<string, Function>) {

@@ -5,12 +5,16 @@ import * as UUID from 'uuid';
 import { CQRS } from '../../src/cqrs/CQRS';
 import { Auth } from '../../src/auth/Auth';
 import { InMemoryAggregateEventStore } from '../../src/cqrs/event/store/InMemoryAggregateEventStore';
-import { CreateTodoCommand, TodoAggregate, CreateTodoCommandExecutor, MarkTodoDoneCommandExecutor } from './TodoExample';
+import { CreateTodoCommand, TodoAggregate, CreateTodoCommandExecutor, MarkTodoDoneCommandExecutor, TodoCreatedEventExecutor, TodoMarkedDoneEventExecutor } from './TodoExample';
 
-const cqrs = new CQRS(new InMemoryAggregateEventStore());
+const eventExecutors = [new TodoCreatedEventExecutor(), new TodoMarkedDoneEventExecutor()];
+
+const eventStore = new InMemoryAggregateEventStore(eventExecutors);
+const cqrs = new CQRS(eventStore);
 cqrs.registerCommandExecutor(new CreateTodoCommandExecutor());
 cqrs.registerCommandExecutor(new MarkTodoDoneCommandExecutor());
 cqrs.registerAggregateClass('Todo', TodoAggregate);
+eventExecutors.forEach((ee) => cqrs.registerEventExecutor(ee));
 const issuerAuth = new Auth('user', 'userId1', ['registered']);
 
 suite('cqrs', () => {

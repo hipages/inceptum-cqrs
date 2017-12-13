@@ -1,5 +1,32 @@
+import { EventExecutor } from './event/EventExecutor';
 
 export class Aggregate {
+  public static applyEvents(allEvents: Object[], eventExecutors: EventExecutor<any, any>[], aggregateClasses: Map<string, Function>) {
+    const firstEvent = allEvents[0];
+    const firstEventExecutor = EventExecutor.getEventExecutor(firstEvent, eventExecutors);
+    if (!firstEventExecutor) {
+      throw new Error(`Unknown event during getAggregate: ${firstEvent.constructor.name}`);
+    }
+    if (!firstEventExecutor || !firstEventExecutor.isAggregateCreating()) {
+      throw new Error(`The first event of aggregate ${firstEventExecutor.getAggregateId(firstEvent)} is not an AggregateCreatingEvent. Panic!`);
+    }
+    const aggregate = Aggregate.instantiateAggregate(firstEventExecutor.getAggregateType(), firstEventExecutor.getAggregateId(firstEvent), aggregateClasses);
+    allEvents.forEach((e) => {
+      const eventExecutor = EventExecutor.getEventExecutor(e, eventExecutors);
+      if (eventExecutor) {
+        eventExecutor.apply(e, aggregate);
+      } else {
+        throw new Error(`Unknown event during getAggregate: ${firstEvent.constructor.name}`);
+      }
+    });
+    return aggregate;
+  }
+
+  public static instantiateAggregate(aggregateType: string, aggregateId: string, aggregateClasses: Map<string, Function>): Aggregate {
+    const aggregateClass = aggregateClasses.has(aggregateType) ? aggregateClasses.get(aggregateType) : Aggregate;
+    return new (aggregateClass as any)(aggregateType, aggregateId);
+  }
+
   private aggregateRoles: Map<string, Array<string>>;
   aggregateId: string;
   aggregateType: string;
