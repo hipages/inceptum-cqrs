@@ -5,8 +5,12 @@ import { Command } from '../../src/cqrs/command/Command';
 import { AggregateCommand } from '../../src/cqrs/command/AggregateCommand';
 import { AggregateCreatingCommand } from '../../src/cqrs/command/AggregateCreatingCommand';
 import { CommandExecutor } from '../../src/cqrs/command/CommandExecutor';
+import { CQRSAggregate, CQRSEventExecutor, CQRSCommand, CQRSCommandExecutor } from '../../src/cqrs/plugin/CQRSDecorators';
 
+@CQRSAggregate
 export class TodoAggregate extends Aggregate {
+  static aggregateName = 'Todo';
+
   title: string;
   description: string;
   status: string;
@@ -18,6 +22,7 @@ export class TodoCreatedEvent {
   }
 }
 
+@CQRSEventExecutor
 export class TodoCreatedEventExecutor extends EventExecutor<TodoCreatedEvent, TodoAggregate> {
   constructor() {
     super(true, 'aggregateId', 'Todo');
@@ -40,6 +45,7 @@ export class TodoMarkedDoneEvent {
   }
 }
 
+@CQRSEventExecutor
 export class TodoMarkedDoneEventExecutor extends EventExecutor<TodoMarkedDoneEvent, TodoAggregate> {
   constructor() {
     super(false, 'aggregateId');
@@ -53,11 +59,12 @@ export class TodoMarkedDoneEventExecutor extends EventExecutor<TodoMarkedDoneEve
   }
 }
 
+@CQRSCommand
 export class CreateTodoCommand extends AggregateCreatingCommand {
   title: string;
   description: string;
 
-  constructor(obj) {
+  constructor(obj: any = {}) {
     obj.aggregateType = 'Todo';
     super(obj);
     this.title = obj.title;
@@ -66,6 +73,7 @@ export class CreateTodoCommand extends AggregateCreatingCommand {
   }
 }
 
+@CQRSCommandExecutor
 export class CreateTodoCommandExecutor extends CommandExecutor<CreateTodoCommand, TodoAggregate> {
   // tslint:disable-next-line:prefer-function-over-method
   async doExecute(command: CreateTodoCommand, executionContext: ExecutionContext, aggregate) {
@@ -98,9 +106,11 @@ export class CreateTodoCommandExecutor extends CommandExecutor<CreateTodoCommand
   }
 }
 
+@CQRSCommand
 export class MarkTodoDoneCommand extends AggregateCommand {
 }
 
+@CQRSCommandExecutor
 export class MarkTodoDoneCommandExecutor extends CommandExecutor<MarkTodoDoneCommand, TodoAggregate> {
   // tslint:disable-next-line:prefer-function-over-method
   async doExecute(command: MarkTodoDoneCommand, executionContext: ExecutionContext, aggregate?: TodoAggregate) {
@@ -127,6 +137,3 @@ export class MarkTodoDoneCommandExecutor extends CommandExecutor<MarkTodoDoneCom
     return command instanceof MarkTodoDoneCommand;
   }
 }
-
-Command.registerCommandClass(CreateTodoCommand);
-Command.registerCommandClass(MarkTodoDoneCommand);

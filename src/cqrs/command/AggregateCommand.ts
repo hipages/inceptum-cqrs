@@ -12,7 +12,7 @@ export abstract class AggregateCommand extends Command {
    * @param {[string]} commandId The id for this command. If not specified, the IdGenerator will be called to generate one
    * @param {string} aggregateId The id of the aggregate this command acts upon
    */
-  constructor(obj: AggregateCommandOptions) {
+  constructor(obj: AggregateCommandOptions = {}) {
     super(obj);
     this.aggregateId = obj.aggregateId;
   }

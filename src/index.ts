@@ -17,3 +17,4 @@ export { EventExecutor } from './cqrs/event/EventExecutor';
 export { ReturnToCallerError } from './cqrs/error/ReturnToCallerError';
 export { ValidationError } from './cqrs/error/ValidationError';
 export { AuthorizationError } from './cqrs/error/AuthorizationError';
+export * from './cqrs/plugin/CQRSDecorators';

@@ -167,7 +167,7 @@ export class SwaggerCQRSMiddleware {
       newrelic.recordMetric(`Custom/CQRSCommand/${commandName}`);
     }
     const payload = this.getPayload(req, bodyParamName);
-    const command = Command.fromObject(payload || {}, commandName);
+    const command = this.cqrs.deserialiseCommand(payload || {}, commandName);
     try {
       const executionContext = await this.cqrs.executeCommand(command);
 
