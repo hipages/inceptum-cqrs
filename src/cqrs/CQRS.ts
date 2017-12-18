@@ -1,5 +1,6 @@
 import { Stream } from 'stream';
 import * as lruCache from 'lru-cache';
+import { AutowireGroup, StartMethod, AutowireGroupDefinitions, SingletonDefinition, LogManager } from 'inceptum';
 import { AggregateEventStore } from './event/store/AggregateEventStore';
 import { ExecutionContext } from './ExecutionContext';
 import { Aggregate } from './Aggregate';
@@ -9,6 +10,9 @@ import { EventExecutor } from './event/EventExecutor';
 
 const MAX_AGGREGATE_CACHE_ENTRIES = 1000;
 const MAX_AGGREGATE_CACHE_AGE = 1000 * 60 * 60; // one hour
+
+const Logger = LogManager.getLogger(__filename);
+
 class CacheInvalidatingAggregateEventStore extends AggregateEventStore {
   eventExecutors: EventExecutor<any, any>[];
   eventStream: Stream;
@@ -48,11 +52,43 @@ class CacheInvalidatingAggregateEventStore extends AggregateEventStore {
 
 export class CQRS {
   aggregateEventStore: AggregateEventStore;
+  commandClasses = new Map<string, Function>();
   aggregateClasses = new Map<string, Function>();
   aggregateCache: any;
   eventStream = new Stream();
+
+  @AutowireGroup('cqrs:commandExecutor')
   commandExecutors: CommandExecutor<any, any>[] = [];
+
+  @AutowireGroup('cqrs:eventExecutor')
   eventExecutors: EventExecutor<any, any>[] = [];
+
+  @AutowireGroupDefinitions('cqrs:aggregate')
+  aggregateDefinitionsToRegister: SingletonDefinition<any>[];
+
+  @AutowireGroupDefinitions('cqrs:command')
+  commandDefinitionsToRegister: SingletonDefinition<any>[];
+
+  @StartMethod
+  private doSetup() {
+    if (this.aggregateDefinitionsToRegister && this.aggregateDefinitionsToRegister.length > 0) {
+      this.aggregateDefinitionsToRegister.forEach((def) => {
+        const name = def.getProducedClass().aggregateName;
+        if (!name) {
+          throw new Error(`Class ${def.getProducedClass().constructor.name} is marked as an Aggregate, but it doesn't have a static property called aggregateName`);
+        }
+        this.registerAggregateClass(name, def.getProducedClass());
+      });
+    }
+    this.aggregateDefinitionsToRegister = null;
+    if (this.commandDefinitionsToRegister && this.commandDefinitionsToRegister.length > 0) {
+      this.commandDefinitionsToRegister.forEach((def) => {
+        const name = def.getProducedClass().name;
+        this.registerCommandClass(name, def.getProducedClass());
+      });
+    }
+    this.commandDefinitionsToRegister = null;
+  }
 
   /**
    * Construct a new instance of the CQRS framework
@@ -106,11 +142,25 @@ export class CQRS {
     }
     return Aggregate.applyEvents(allEvents, this.eventExecutors, this.aggregateClasses);
   }
-  static deserialiseCommand<T extends Command>(obj, commandType): T {
-    return Command.fromObject(obj, commandType) as T;
+  deserialiseCommand<T extends Command>(obj, commandType): T {
+    if (!commandType && !Object.hasOwnProperty.call(obj, Command.commandFieldType)) {
+      throw new Error(`Can't deserialise object into typed instance because it doesn't have a ${Command.commandFieldType} field`);
+    }
+    const type = commandType || obj[Command.commandFieldType];
+    if (!this.commandClasses.has(type)) {
+      throw new Error(`Unknown command type ${type}`);
+    }
+    const typeConstructor = this.commandClasses.get(type);
+    return Reflect.construct(typeConstructor, [obj]);
   }
   registerAggregateClass(name: string, aggregateClass: Function) {
+    Logger.info(`Registering aggregate ${name}`);
     this.aggregateClasses.set(name, aggregateClass);
+  }
+
+  registerCommandClass(name: string, commandClass: Function) {
+    Logger.info(`Registering command ${name}`);
+    this.commandClasses.set(name, commandClass);
   }
   private instantiateAggregate(aggregateType: string, aggregateId: string): Aggregate {
     const aggregateClass = this.aggregateClasses.has(aggregateType) ? this.aggregateClasses.get(aggregateType) : Aggregate;

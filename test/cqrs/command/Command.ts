@@ -2,6 +2,8 @@ import { suite, test, slow, timeout } from 'mocha-typescript';
 import { must } from 'must';
 import { Command } from '../../../src/cqrs/command/Command';
 import { AggregateCommand, AggregateCommandOptions } from '../../../src/cqrs/command/AggregateCommand';
+import { CQRS } from '../../../src/cqrs/CQRS';
+import { InMemoryAggregateEventStore } from '../../../src/cqrs/event/store/InMemoryAggregateEventStore';
 
 class TestCommand1 extends AggregateCommand {
   myVar2: string;
@@ -35,12 +37,12 @@ class TestCommand1 extends AggregateCommand {
   }
 }
 
-Command.registerCommandClass(TestCommand1);
-
 suite('cqrs/command/Command', () => {
   suite('Serialisation', () => {
     test('Command is deserialised properly', () => {
-      const command = Command.fromObject({myVar1: 'hi', myVar2: 'hello' }, 'TestCommand1');
+      const cqrs = new CQRS(new InMemoryAggregateEventStore([]));
+      cqrs.registerCommandClass('TestCommand1', TestCommand1);
+      const command = cqrs.deserialiseCommand({myVar1: 'hi', myVar2: 'hello' }, 'TestCommand1');
       (command instanceof TestCommand1).must.be.equal(true);
       const typed = command as TestCommand1;
       typed.getVar1().must.equal('hi');

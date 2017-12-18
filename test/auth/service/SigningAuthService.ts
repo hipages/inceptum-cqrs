@@ -15,11 +15,9 @@ suite('auth/service/SigningAuthService', () => {
       const service = new SigningAuthService({ issuer: 'TestIssuer', privateKeyId: 'test1', privateKeyPem });
       const resp = service.sign(auth);
       const parts = resp.split('.', 3);
-      // console.log(resp);
       const headerStr = Buffer.from(parts[0], 'base64').toString();
       const header = JSON.parse(headerStr);
       header.keyid.must.equal('test1');
-      // console.log(header);
       const payloadStr = Buffer.from(parts[1], 'base64').toString();
       const payload = JSON.parse(payloadStr);
       payload.sub.must.equal('testUserId');

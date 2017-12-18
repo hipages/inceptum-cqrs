@@ -2,7 +2,6 @@ import { Auth } from '../../auth/Auth';
 import { ExecutionContext } from '../ExecutionContext';
 import { IdGenerator, UUIDGenerator } from '../IdGenerator';
 
-const commandFieldType = '@commandType';
 const defaultGenerator = new UUIDGenerator();
 
 interface Glue {
@@ -17,10 +16,10 @@ export type CommandOptions = {
 };
 
 export abstract class Command {
+  static commandFieldType = '@commandType';
   issuerAuth: Auth;
   commandId: string;
   commandTimestamp: number;
-  static commandClasses = new Map<string, Function>();
 
   /**
    * Creates a new command instance from the provided info.
@@ -32,13 +31,13 @@ export abstract class Command {
     this.issuerAuth = obj.issuerAuth;
     this.commandTimestamp = obj.commandTimestamp || new Date().getTime();
     this.commandId = obj.commandId || this.getIdGenerator().generate(this.constructor.name);
-    this[commandFieldType] = this.constructor.name;
+    this[Command.commandFieldType] = this.constructor.name;
   }
   getCommandId(): string {
     return this.commandId;
   }
   getCommandType(): string {
-    return this[commandFieldType];
+    return this[Command.commandFieldType];
   }
   /**
    * The unix timestamp (milliseconds since Epoch) when this command was issued
@@ -48,20 +47,6 @@ export abstract class Command {
   }
   getIssuerAuth(): Auth {
     return this.issuerAuth;
-  }
-  static registerCommandClass(eventClass: Function) {
-    Command.commandClasses.set(eventClass.name, eventClass);
-  }
-  static fromObject(obj: Object, commandType: string): Command {
-    if (!commandType && !Object.hasOwnProperty.call(obj, commandFieldType)) {
-      throw new Error(`Can't deserialise object into typed instance because it doesn't have a ${commandFieldType} field`);
-    }
-    const type = commandType || obj[commandFieldType];
-    if (!Command.commandClasses.has(type)) {
-      throw new Error(`Unknown command type ${type}`);
-    }
-    const typeConstructor = Command.commandClasses.get(type);
-    return Reflect.construct(typeConstructor, [obj]);
   }
   // tslint:disable-next-line:prefer-function-over-method
   protected getIdGenerator(): IdGenerator {
