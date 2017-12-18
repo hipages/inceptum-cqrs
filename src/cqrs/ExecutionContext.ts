@@ -1,3 +1,4 @@
+import * as stringify from 'json-stringify-safe';
 import { ExtendedError } from 'inceptum';
 import { CommandExecutor } from './command/CommandExecutor';
 import { Command } from './command/Command';
@@ -126,11 +127,11 @@ export class ExecutionContext extends AggregateEventStore {
         this.status = Status.COMMITTED;
         if (e instanceof ReturnToCallerError) {
           // hide the actual error and return a custom error
-          this.error = new ReturnToCallerError(`There was an error executing command ${command}`, e.httpStatusCode, e);
+          this.error = new ReturnToCallerError(`There was an error executing command ${stringify(command)}`, e.httpStatusCode, e);
           throw this.error;
         } else {
           // hide the actual error and return a custom error
-          this.error = new ExtendedError(`There was an error executing command ${command}`, e);
+          this.error = new ExtendedError(`There was an error executing command ${stringify(command)}`, e);
           throw this.error;
         }
       }

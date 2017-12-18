@@ -75,7 +75,6 @@ export class CreateTodoCommand extends AggregateCreatingCommand {
 
 @CQRSCommandExecutor
 export class CreateTodoCommandExecutor extends CommandExecutor<CreateTodoCommand, TodoAggregate> {
-  // tslint:disable-next-line:prefer-function-over-method
   async doExecute(command: CreateTodoCommand, executionContext: ExecutionContext, aggregate) {
     await executionContext.commitEvent(new TodoCreatedEvent(
       command.title,
@@ -84,7 +83,6 @@ export class CreateTodoCommandExecutor extends CommandExecutor<CreateTodoCommand
       command.getAggregateId(),
     ));
   }
-  // tslint:disable-next-line:prefer-function-over-method
   async validate(command: CreateTodoCommand) {
     if (!command.title) {
       throw new Error('Need to specify a title for the Todo');
@@ -93,14 +91,12 @@ export class CreateTodoCommandExecutor extends CommandExecutor<CreateTodoCommand
       throw new Error('Need to specify a description for the Todo');
     }
   }
-  // tslint:disable-next-line:prefer-function-over-method
   async validateAuth(command: CreateTodoCommand) {
     if (command.issuerAuth.getType() !== 'user') {
       throw new Error(`Only users can execute this command. Provided auth for an entity of type ${command.issuerAuth.getType()}`);
     }
   }
 
-  // tslint:disable-next-line:prefer-function-over-method
   public canExecute(command: Command): boolean {
     return command instanceof CreateTodoCommand;
   }
@@ -112,27 +108,23 @@ export class MarkTodoDoneCommand extends AggregateCommand {
 
 @CQRSCommandExecutor
 export class MarkTodoDoneCommandExecutor extends CommandExecutor<MarkTodoDoneCommand, TodoAggregate> {
-  // tslint:disable-next-line:prefer-function-over-method
   async doExecute(command: MarkTodoDoneCommand, executionContext: ExecutionContext, aggregate?: TodoAggregate) {
     await executionContext.commitEvent(new TodoMarkedDoneEvent(
       command.getAggregateId(),
     ));
   }
-  // tslint:disable-next-line:prefer-function-over-method
   async validateAuth(command: MarkTodoDoneCommand, executionContext: ExecutionContext, aggregate?: TodoAggregate) {
     const roles = command.getRolesForAggregate(aggregate);
     if (roles.indexOf('creator') < 0) {
       throw new Error('Only the creator of the Todo can mark it as done');
     }
   }
-  // tslint:disable-next-line:prefer-function-over-method
   async validate(command: MarkTodoDoneCommand, executionContext: ExecutionContext, aggregate?: TodoAggregate) {
     if (aggregate.status !== 'NotDone') {
       throw new Error('Aggregate is not currently in NotDone');
     }
   }
 
-  // tslint:disable-next-line:prefer-function-over-method
   public canExecute(command: Command): boolean {
     return command instanceof MarkTodoDoneCommand;
   }

@@ -46,7 +46,6 @@ export class SwaggerCQRSMiddleware {
    * @param req
    * @returns {*}
    */
-  // tslint:disable-next-line:prefer-function-over-method
   getCQRSCommand(req) {
     if (!req || !req.swagger) {
       return undefined;
@@ -60,7 +59,6 @@ export class SwaggerCQRSMiddleware {
     return undefined;
   }
 
-  // tslint:disable-next-line:prefer-function-over-method
   getCQRSGet(req) {
     if (!req || !req.swagger) {
       return undefined;
@@ -185,7 +183,7 @@ export class SwaggerCQRSMiddleware {
         res.send('');
       }
     } catch (err) {
-      logger.error(err, `Exception executing command ${commandName}: ${stringify(command)}`);
+      logger.error(`Exception executing command ${commandName}: ${stringify(command)}`, err);
       if (newrelic) {
         newrelic.noticeError(err);
       }
