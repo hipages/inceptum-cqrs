@@ -14,39 +14,36 @@ const MAX_AGGREGATE_CACHE_AGE = 1000 * 60 * 60; // one hour
 const Logger = LogManager.getLogger(__filename);
 
 class CacheInvalidatingAggregateEventStore extends AggregateEventStore {
-  eventExecutors: EventExecutor<any, any>[];
-  eventStream: Stream;
-  cache: any;
   baseEventStore: AggregateEventStore;
-  constructor(baseEventStore: AggregateEventStore, cache, eventStream: Stream, eventExecutors: EventExecutor<any, any>[]) {
+  cqrs: CQRS;
+
+  constructor(baseEventStore: AggregateEventStore, cqrs: CQRS) {
     super();
     this.baseEventStore = baseEventStore;
-    this.cache = cache;
-    this.eventStream = eventStream;
-    this.eventExecutors = eventExecutors;
+    this.cqrs = cqrs;
   }
   async getEventsOf(aggregateId: string): Promise<any[]> {
     return await this.baseEventStore.getEventsOf(aggregateId);
   }
   async commitEvent(aggregateEvent: any): Promise<void> {
-    const executor = EventExecutor.getEventExecutor(aggregateEvent, this.eventExecutors);
+    const executor = EventExecutor.getEventExecutor(aggregateEvent, this.cqrs.eventExecutors);
     if (!executor) {
       throw new Error(`Unknown event to commit ${aggregateEvent.constructor.name}`);
     }
-    this.cache.del(executor.getAggregateId(aggregateEvent));
+    this.cqrs.aggregateCache.del(executor.getAggregateId(aggregateEvent));
     await this.baseEventStore.commitEvent(aggregateEvent);
-    this.eventStream.emit('event', aggregateEvent);
+    this.cqrs.eventStream.emit('event', aggregateEvent);
   }
   async commitAllEvents(aggregateEvents: any[]): Promise<void> {
     aggregateEvents.forEach((aggregateEvent) => {
-      const executor = EventExecutor.getEventExecutor(aggregateEvent, this.eventExecutors);
+      const executor = EventExecutor.getEventExecutor(aggregateEvent, this.cqrs.eventExecutors);
       if (!executor) {
         throw new Error(`Unknown event to commit ${aggregateEvent.constructor.name}`);
       }
-      this.cache.del(executor.getAggregateId(aggregateEvent));
+      this.cqrs.aggregateCache.del(executor.getAggregateId(aggregateEvent));
     });
     await this.baseEventStore.commitAllEvents(aggregateEvents);
-    aggregateEvents.forEach((aggregateEvent) => this.eventStream.emit('event', aggregateEvent));
+    aggregateEvents.forEach((aggregateEvent) => this.cqrs.eventStream.emit('event', aggregateEvent));
   }
 }
 
@@ -99,7 +96,7 @@ export class CQRS {
       max: MAX_AGGREGATE_CACHE_ENTRIES,
       maxAge: MAX_AGGREGATE_CACHE_AGE,
     });
-    this.aggregateEventStore = new CacheInvalidatingAggregateEventStore(aggregateEventStore, this.aggregateCache, this.eventStream, this.eventExecutors);
+    this.aggregateEventStore = new CacheInvalidatingAggregateEventStore(aggregateEventStore, this);
   }
   newExecutionContext(): ExecutionContext {
     const execContext = new ExecutionContext(this.aggregateEventStore, this.commandExecutors, this.eventExecutors);
