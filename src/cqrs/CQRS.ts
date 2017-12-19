@@ -33,6 +33,7 @@ class CacheInvalidatingAggregateEventStore extends AggregateEventStore {
     this.cqrs.aggregateCache.del(executor.getAggregateId(aggregateEvent));
     await this.baseEventStore.commitEvent(aggregateEvent);
     this.cqrs.eventStream.emit('event', aggregateEvent);
+    await this.notifyEventListeners(aggregateEvent);
   }
   async commitAllEvents(aggregateEvents: any[]): Promise<void> {
     aggregateEvents.forEach((aggregateEvent) => {
@@ -44,7 +45,25 @@ class CacheInvalidatingAggregateEventStore extends AggregateEventStore {
     });
     await this.baseEventStore.commitAllEvents(aggregateEvents);
     aggregateEvents.forEach((aggregateEvent) => this.cqrs.eventStream.emit('event', aggregateEvent));
+    await aggregateEvents.reduce(async (prevPromise, aggregateEvent) => {
+      await prevPromise;
+      await this.notifyEventListeners(aggregateEvent);
+    }, Promise.resolve());
   }
+  private async notifyEventListeners(aggregateEvent: any) {
+    await this.cqrs.eventListeners.reduce(async (prevPromise, eventListener: EventListener) => {
+      await prevPromise;
+      try {
+        await eventListener.eventCommitted(aggregateEvent);
+      } catch (e) {
+        Logger.error(e, 'There was an error in event listener');
+      }
+    }, Promise.resolve());
+  }
+}
+
+export abstract class EventListener {
+  abstract async eventCommitted(event: any);
 }
 
 export class CQRS {
@@ -65,6 +84,9 @@ export class CQRS {
 
   @AutowireGroupDefinitions('cqrs:command')
   commandDefinitionsToRegister: SingletonDefinition<any>[];
+
+  @AutowireGroup('cqrs:eventListener')
+  eventListeners: EventListener[] = [];
 
   @StartMethod
   private doSetup() {

@@ -20,3 +20,8 @@ export function CQRSEventExecutor(target: any) {
   RegisterInGroup('cqrs:eventExecutor')(target);
   Lazy(false)(target);
 }
+
+export function CQRSEventListener(target: any) {
+  RegisterInGroup('cqrs:eventListener')(target);
+  Lazy(false)(target);
+}
