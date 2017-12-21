@@ -126,14 +126,13 @@ export class ExecutionContext extends AggregateEventStore {
       } catch (e) {
         this.status = Status.COMMITTED;
         if (e instanceof ReturnToCallerError) {
-          // hide the actual error and return a custom error
-          this.error = new ReturnToCallerError(`There was an error executing command ${stringify(command)}`, e.httpStatusCode, e);
-          throw this.error;
+          // return the error to the caller
+          this.error = e;
         } else {
           // hide the actual error and return a custom error
           this.error = new ExtendedError(`There was an error executing command ${stringify(command)}`, e);
-          throw this.error;
         }
+        throw this.error;
       }
     }
     // All commands executed correctly
@@ -142,14 +141,13 @@ export class ExecutionContext extends AggregateEventStore {
       await this.aggregateEventStore.commitAllEvents(this.eventsToEmit);
     } catch (e) {
       if (e instanceof ReturnToCallerError) {
-        // hide the actual error and return a custom error
-        this.error = new ReturnToCallerError('There was an error saving events', e.httpStatusCode, e);
-        throw this.error;
+        // return the error to the caller
+        this.error = e;
       } else {
         // hide the actual error and return a custom error
         this.error = new ExtendedError('There was an error saving events', e);
-        throw this.error;
       }
+      throw this.error;
     }
   }
   getError() {

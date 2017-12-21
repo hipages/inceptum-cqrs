@@ -54,7 +54,7 @@ export abstract class CommandExecutor<T extends Command, A extends Aggregate> {
    */
   async execute(command: T, executionContext: ExecutionContext, aggregate?: A): Promise<void> {
     if (command instanceof AggregateCommand && (!aggregate && !(command instanceof AggregateCreatingCommand))) {
-      throw new Error(`Execution of an AggregateCommand of type ${command.constructor.name} must have an aggregate`);
+      throw new ReturnToCallerError(`Execution of an AggregateCommand of type ${command.constructor.name} must have an valid aggregate`);
     }
     await this.validate(command, executionContext, aggregate);
     await this.validateAuth(command, executionContext, aggregate);
