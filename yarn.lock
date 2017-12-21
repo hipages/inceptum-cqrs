@@ -1380,7 +1380,7 @@ imurmurhash@^0.1.4:
 
 inceptum@^0.5.34:
   version "0.5.34"
-  resolved "https://registry.npmjs.org/inceptum/-/inceptum-0.5.34.tgz#5fdc970da3eded71e43ac0085e6f6424cc993b0c"
+  resolved "https://registry.yarnpkg.com/inceptum/-/inceptum-0.5.34.tgz#5fdc970da3eded71e43ac0085e6f6424cc993b0c"
   dependencies:
     "@types/axios" "^0.14.0"
     "@types/bunyan" "1.8.0"
