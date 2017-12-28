@@ -172,6 +172,7 @@ suite('cqrs/plugin/SwaggerCQRSMiddleware', () => {
       const cqrs = await context.getObjectByName('CQRS');
       // const result = swaggerMidware.register(app);
       // swaggerMidware.cqrs.must.eql(cqrs);
+      await app.stop();
     });
   });
 
@@ -236,6 +237,7 @@ suite('cqrs/plugin/SwaggerCQRSMiddleware', () => {
       const commandName = 'CreateTodoCommand';
       const bodyParamName = 'testPayload';
       const result = swaggerMidware.handleCQRSCommand(swaggerOperationCqrsCommandReq, res);
+      await app.stop();
     });
   });
 
