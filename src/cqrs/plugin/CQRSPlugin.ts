@@ -1,57 +1,14 @@
 import { Stream } from 'stream';
-import { SingletonDefinition, Plugin,  InceptumApp,  LogManager,  BaseSingletonDefinition,  AbstractObjectDefinitionInspector, Lazy, StartMethod, Autowire, AutowireGroupDefinitions, Logger } from 'inceptum';
+import { SingletonDefinition, Plugin,  InceptumApp,  LogManager,  BaseSingletonDefinition,  AbstractObjectDefinitionInspector, Lazy, StartMethod, Autowire, AutowireGroupDefinitions, Logger, WebPlugin, NewrelicUtil } from 'inceptum';
 import { CQRS } from '../CQRS';
 import { Command } from '../command/Command';
 
+import { ReturnToCallerError } from '../error/ReturnToCallerError';
 import { SwaggerCQRSMiddleware } from './SwaggerCQRSMiddleware';
 
 const logger = LogManager.getLogger(__filename);
 
-// interface AggregateToRegister {
-//   aggregateName: String,
-//   aggregateClass: Function,
-// }
-
-// class AggregateRegisterUtil {
-//   private aggregatesToRegister: AggregateToRegister[] = [];
-//   private cqrs: CQRS;
-
-//   doRegister() {
-//     this.aggregatesToRegister.forEach((def: AggregateToRegister) => {
-//       logger.info(`Registering aggregate ${def.aggregateName} into CQRS`);
-//       this.cqrs.registerAggregateClass(def.aggregateName as string, def.aggregateClass);
-//     });
-//   }
-// }
-
-// class AggregateInspector extends AbstractObjectDefinitionInspector {
-//   definition: BaseSingletonDefinition<AggregateRegisterUtil>;
-//   aggregatesToRegister: AggregateToRegister[] = [];
-
-//   constructor(definition: BaseSingletonDefinition<AggregateRegisterUtil>) {
-//     super();
-//     this.definition = definition;
-//     this.definition.setPropertyByValue('aggregatesToRegister', this.aggregatesToRegister);
-//   }
-
-//   // tslint:disable-next-line:prefer-function-over-method
-//   interestedIn(objectDefinition) {
-//     return (objectDefinition instanceof SingletonDefinition)
-//       && (objectDefinition.getProducedClass().aggregateName !== undefined);
-//   }
-
-//   /**
-//    * @param {SingletonDefinition} objectDefinition singleton definition
-//    */
-//   // tslint:disable-next-line:prefer-function-over-method
-//   doInspect(objectDefinition: SingletonDefinition<any>) {
-//     const aggregateName: string = objectDefinition.getProducedClass().aggregateName;
-//     this.aggregatesToRegister.push({
-//       aggregateName,
-//       aggregateClass: objectDefinition.getProducedClass(),
-//     });
-//   }
-// }
+const newrelic = NewrelicUtil.getNewrelicIfAvailable();
 
 @Lazy(false)
 export class WireCQRSPlugin {
@@ -85,14 +42,7 @@ export class CQRSPlugin implements Plugin {
       this.configurator(singletonDefinition);
     }
 
-    // const definition = new BaseSingletonDefinition<AggregateRegisterUtil>(AggregateRegisterUtil);
-    // definition.withLazyLoading(false);
-    // definition.startFunction('doRegister');
-    // definition.setPropertyByRef('cqrs', 'CQRS');
-    // context.registerDefinition(definition);
-    // context.addObjectDefinitionInspector(new AggregateInspector(definition));
-
-    const express = pluginContext.get('WebPlugin/APP');
+    const express = pluginContext.get(WebPlugin.CONTEXT_APP_KEY);
     if (express) {
       const middleware = new SwaggerCQRSMiddleware();
       middleware.register(express);
@@ -103,6 +53,24 @@ export class CQRSPlugin implements Plugin {
       // wireDefinition.setPropertyByRef('cqrs', 'CQRS');
       // wireDefinition.startFunction('wire');
       context.registerDefinition(wireDefinition);
+    }
+  }
+
+  async didStart(app: InceptumApp, pluginContext?: Map<String, any>): Promise<void> {
+    const express = pluginContext.get(WebPlugin.CONTEXT_APP_KEY);
+    if (express) {
+      express.use((err, req, res, next) => {
+        if (newrelic) {
+          newrelic.noticeError(err);
+        }
+        if (err instanceof ReturnToCallerError) {
+          res.status(err.httpStatusCode).send(err.getAllInfoToReturn());
+        } else if (req.swagger) {
+          res.status(500).send({message: 'Internal Server Error'});
+        } else {
+          next(err);
+        }
+      });
     }
   }
 }

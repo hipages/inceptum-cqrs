@@ -8,11 +8,14 @@ export class ReturnToCallerError extends ExtendedError {
     this.name = 'ReturnToCallerError';
   }
 
-  getAllInfo() {
+  /**
+   * Do not override this method. This is the method you should call to know what to return to the caller
+   */
+  getAllInfoToReturn() {
     if (this.cause) {
       const toReturn = this.getInfoToReturn();
       if (this.cause instanceof ReturnToCallerError) {
-        toReturn['cause'] = this.cause.getInfoToReturn();
+        toReturn['cause'] = this.cause.getAllInfoToReturn();
       } else {
         toReturn['cause'] = { message: this.cause.message };
       }
@@ -21,6 +24,9 @@ export class ReturnToCallerError extends ExtendedError {
     return this.getInfoToReturn();
   }
 
+  /**
+   * Please override this method to return whatever information you want to give back to the caller
+   */
   getInfoToReturn() {
     return { message: this.message };
   }
