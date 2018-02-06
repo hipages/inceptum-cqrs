@@ -141,6 +141,9 @@ export class SwaggerCQRSMiddleware {
     if (!aggregate) {
       res.status(404);
       res.send(`Couldn't find aggregate id ${id}`);
+    } else if (aggregateName !== aggregate.aggregateType) {
+      res.status(400);
+      res.send(`aggregate of aggregate id ${id} is NOT ${aggregateName}`);
     } else {
       res.send(aggregate);
     }
