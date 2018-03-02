@@ -12,12 +12,12 @@ export class ReturnToCallerError extends ExtendedError {
    * Do not override this method. This is the method you should call to know what to return to the caller
    */
   getAllInfoToReturn() {
-    if (this.cause) {
+    if (this.causingError) {
       const toReturn = this.getInfoToReturn();
-      if (this.cause instanceof ReturnToCallerError) {
-        toReturn['cause'] = this.cause.getAllInfoToReturn();
+      if (this.causingError instanceof ReturnToCallerError) {
+        toReturn['cause'] = this.causingError.getAllInfoToReturn();
       } else {
-        toReturn['cause'] = { message: this.cause.message };
+        toReturn['cause'] = { message: this.causingError.message};
       }
       return toReturn;
     }
