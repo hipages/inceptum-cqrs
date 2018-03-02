@@ -40,7 +40,7 @@ suite('cqrs', () => {
         true.must.be.falsy();
       } catch (e) {
         e.must.be.an.error(/^There was an error executing command/);
-        e.cause.must.be.an.error('Need to specify a description for the Todo');
+        e.cause().must.be.an.error('Need to specify a description for the Todo');
       }
     });
     test('Can be marked as done', async () => {
@@ -100,7 +100,7 @@ suite('cqrs', () => {
         true.must.be.falsy();
       } catch (e) {
         e.must.be.an.error(/^There was an error executing command/);
-        e.cause.must.be.an.error('Only the creator of the Todo can mark it as done');
+        e.cause().must.be.an.error('Only the creator of the Todo can mark it as done');
       }
     });
   });

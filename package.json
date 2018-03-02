@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@types/uuid": "^3.4.2",
-    "inceptum": "^0.6.1",
+    "inceptum": "^0.6.3",
     "json-stringify-safe": "^5.0.1",
     "jsonwebtoken": "7.3.0",
     "lru-cache": "^4.1.1",

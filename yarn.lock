@@ -1505,9 +1505,9 @@ imurmurhash@^0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/imurmurhash/-/imurmurhash-0.1.4.tgz#9218b9b2b928a238b13dc4fb6b6d576f231453ea"
 
-inceptum@^0.6.1:
-  version "0.6.1"
-  resolved "https://registry.npmjs.org/inceptum/-/inceptum-0.6.1.tgz#21ec47742df631e25650bb173b8dad7b35b65dd9"
+inceptum@^0.6.3:
+  version "0.6.3"
+  resolved "https://registry.npmjs.org/inceptum/-/inceptum-0.6.3.tgz#0f54da5b7ac27fb2740a2dc0456be8908c1bfdbf"
   dependencies:
     "@types/amqplib" "^0.5.5"
     "@types/axios" "^0.14.0"
