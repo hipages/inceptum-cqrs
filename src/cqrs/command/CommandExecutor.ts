@@ -1,3 +1,4 @@
+import { Histogram, Counter } from 'prom-client';
 import {ExecutionContext} from '../ExecutionContext';
 import { Aggregate } from '../Aggregate';
 import { ValidationError } from '../error/ValidationError';
@@ -8,6 +9,18 @@ import { AggregateCreatingCommand } from './AggregateCreatingCommand';
 import { Command } from './Command';
 import { AggregateCommand } from './AggregateCommand';
 
+const commandTimer = new Histogram({
+  name: 'cqrs_command_timer',
+  help: 'Timer for the command histogram',
+  labelNames: ['command'],
+  buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.3, 0.5, 1],
+});
+
+const commandErrorCounter = new Counter({
+  name: 'cqrs_command_error_counter',
+  labelNames: ['command', 'errorType'],
+  help: 'Number of commands that have an error',
+});
 
 export abstract class CommandExecutor<T extends Command, A extends Aggregate> {
 
@@ -53,12 +66,20 @@ export abstract class CommandExecutor<T extends Command, A extends Aggregate> {
    * @returns {*}
    */
   async execute(command: T, executionContext: ExecutionContext, aggregate?: A): Promise<void> {
-    if (command instanceof AggregateCommand && (!aggregate && !(command instanceof AggregateCreatingCommand))) {
-      throw new ReturnToCallerError(`Execution of an AggregateCommand of type ${command.constructor.name} must have an valid aggregate`);
+    const timer = commandTimer.startTimer({command: command ? command.getCommandType() : 'na'});
+    try {
+      if (command instanceof AggregateCommand && (!aggregate && !(command instanceof AggregateCreatingCommand))) {
+        throw new ReturnToCallerError(`Execution of an AggregateCommand of type ${command.constructor.name} must have a valid aggregate`);
+      }
+      await this.validate(command, executionContext, aggregate);
+      await this.validateAuth(command, executionContext, aggregate);
+      await this.doExecute(command, executionContext, aggregate);
+    } catch (e) {
+      commandErrorCounter.labels(command ? command.getCommandType() : 'na', e && e.contructor && e.constructor.name ? e.constructor.name : 'na').inc();
+      throw e;
+    } finally {
+      timer();
     }
-    await this.validate(command, executionContext, aggregate);
-    await this.validateAuth(command, executionContext, aggregate);
-    await this.doExecute(command, executionContext, aggregate);
   }
 
   abstract canExecute(command: Command): boolean;

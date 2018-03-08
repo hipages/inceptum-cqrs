@@ -9,12 +9,6 @@
     "@types/bluebird" "*"
     "@types/node" "*"
 
-"@types/axios@^0.14.0":
-  version "0.14.0"
-  resolved "https://registry.yarnpkg.com/@types/axios/-/axios-0.14.0.tgz#ec2300fbe7d7dddd7eb9d3abf87999964cafce46"
-  dependencies:
-    axios "*"
-
 "@types/bluebird@*":
   version "3.5.19"
   resolved "https://registry.npmjs.org/@types/bluebird/-/bluebird-3.5.19.tgz#1a47308819ac2d1d6d1ca4f5d800ac84924100de"
@@ -268,13 +262,6 @@ aws-sign2@~0.7.0:
 aws4@^1.2.1, aws4@^1.6.0:
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/aws4/-/aws4-1.6.0.tgz#83ef5ca860b2b32e4a0deedee8c771b9db57471e"
-
-axios@*:
-  version "0.17.1"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-0.17.1.tgz#2d8e3e5d0bdbd7327f91bc814f5c57660f81824d"
-  dependencies:
-    follow-redirects "^1.2.5"
-    is-buffer "^1.1.5"
 
 axios@^0.16.2:
   version "0.16.2"
@@ -1144,7 +1131,7 @@ find-up@^2.0.0, find-up@^2.1.0:
   dependencies:
     locate-path "^2.0.0"
 
-follow-redirects@^1.2.3, follow-redirects@^1.2.5:
+follow-redirects@^1.2.3:
   version "1.2.6"
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.2.6.tgz#4dcdc7e4ab3dd6765a97ff89c3b4c258117c79bf"
   dependencies:
@@ -1505,12 +1492,11 @@ imurmurhash@^0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/imurmurhash/-/imurmurhash-0.1.4.tgz#9218b9b2b928a238b13dc4fb6b6d576f231453ea"
 
-inceptum@^0.6.3:
-  version "0.6.3"
-  resolved "https://registry.npmjs.org/inceptum/-/inceptum-0.6.3.tgz#0f54da5b7ac27fb2740a2dc0456be8908c1bfdbf"
+inceptum@^0.6.7:
+  version "0.6.7"
+  resolved "https://registry.npmjs.org/inceptum/-/inceptum-0.6.7.tgz#0142fc74886e486ff433766ec0dce5c7e3793ad8"
   dependencies:
     "@types/amqplib" "^0.5.5"
-    "@types/axios" "^0.14.0"
     "@types/bunyan" "1.8.0"
     "@types/elasticsearch" "^5.0.16"
     "@types/jsonwebtoken" "^7.2.5"
