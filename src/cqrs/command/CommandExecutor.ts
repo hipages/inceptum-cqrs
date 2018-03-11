@@ -13,7 +13,7 @@ const commandTimer = new Histogram({
   name: 'cqrs_command_timer',
   help: 'Timer for the command histogram',
   labelNames: ['command'],
-  buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.3, 0.5, 1],
+  buckets: [0.003, 0.03, 0.1, 0.3, 0.5, 1.5, 5, 10],
 });
 
 const commandErrorCounter = new Counter({
