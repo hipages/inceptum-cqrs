@@ -1690,9 +1690,9 @@ imurmurhash@^0.1.4:
   version "0.1.4"
   resolved "https://registry.npmjs.org/imurmurhash/-/imurmurhash-0.1.4.tgz#9218b9b2b928a238b13dc4fb6b6d576f231453ea"
 
-inceptum@^0.6.8:
-  version "0.6.8"
-  resolved "https://registry.npmjs.org/inceptum/-/inceptum-0.6.8.tgz#112db4c8462775a811fd4dacc8d2feab1037fb45"
+inceptum@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.npmjs.org/inceptum/-/inceptum-0.7.0.tgz#aca40b2c89dfa77f4a0fb1c97b4e66951db173a3"
   dependencies:
     "@types/amqplib" "^0.5.5"
     "@types/bunyan" "1.8.0"
