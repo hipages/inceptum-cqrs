@@ -26,6 +26,7 @@ export class ExecutionContext extends AggregateEventStore {
   status: Status;
   aggregateEventStore: AggregateEventStore;
   aggregateClasses = new Map<string, Function>();
+  aggregateEventsStoreCache: Map<string, any[]>;
   /**
    * Constructs a new instance of ExecutionContext
    * @param {AggregateEventStore} aggregateEventStore The store to commit events to
@@ -40,7 +41,7 @@ export class ExecutionContext extends AggregateEventStore {
     this.commandResults = new Map<string, CommandResult>();
     this.commandExecutors = commandExecutors;
     this.eventExecutors = eventExecutors;
-    // this.aggregateCache = new Map();
+    this.aggregateEventsStoreCache = new Map<string, any[]>();
   }
   /**
    * Saves an aggregate event to this execution context.
@@ -72,8 +73,17 @@ export class ExecutionContext extends AggregateEventStore {
       throw new Error('ExecutionContext is already committed. Can\'t perform additional actions');
     }
   }
+  private async getAggregateEventsFromStore(aggregateId: string): Promise<any[]> {
+    const cached = this.aggregateEventsStoreCache.get(aggregateId);
+    if (cached) {
+      return cached;
+    }
+    const events = (await this.aggregateEventStore.getEventsOf(aggregateId)) || [];
+    this.aggregateEventsStoreCache.set(aggregateId, events);
+    return events;
+  }
   async getAggregate(aggregateId): Promise<Aggregate> {
-    const aggregateEvents = (await this.aggregateEventStore.getEventsOf(aggregateId)) || [];
+    const aggregateEvents = await this.getAggregateEventsFromStore(aggregateId);
     const uncommittedEvents = this.getUncommittedEventsOf(aggregateId) || [];
     const allEvents = aggregateEvents.concat(uncommittedEvents);
     if (allEvents.length === 0) {
