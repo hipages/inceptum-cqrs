@@ -1701,9 +1701,9 @@ imurmurhash@^0.1.4:
   version "0.1.4"
   resolved "https://registry.npmjs.org/imurmurhash/-/imurmurhash-0.1.4.tgz#9218b9b2b928a238b13dc4fb6b6d576f231453ea"
 
-inceptum@^0.8.1:
-  version "0.8.1"
-  resolved "https://registry.npmjs.org/inceptum/-/inceptum-0.8.1.tgz#df84388dc329fd2422f1674f7b7475b56607e113"
+inceptum@^0.8.7:
+  version "0.8.7"
+  resolved "https://registry.npmjs.org/inceptum/-/inceptum-0.8.7.tgz#a2aa4fffb52af76f263dd26c416722281a2ddb94"
   dependencies:
     "@types/amqplib" "^0.5.5"
     "@types/bunyan" "1.8.0"
@@ -1743,6 +1743,7 @@ inceptum@^0.8.1:
     node-dogstatsd "0.0.6"
     pg "^7.0.2"
     prom-client "^10.2.2"
+    prometheus-extended-gauge "^0.1.2"
     prometheus-gc-stats "^0.5.0"
     redis "2.6.5"
     reflect-metadata "^0.1.10"
@@ -2566,7 +2567,7 @@ loose-envify@^1.0.0:
   dependencies:
     js-tokens "^3.0.0"
 
-lru-cache@^4.0.1, lru-cache@^4.1.1:
+lru-cache@^4.0.1:
   version "4.1.2"
   resolved "https://registry.npmjs.org/lru-cache/-/lru-cache-4.1.2.tgz#45234b2e6e2f2b33da125624c4664929a0224c3f"
   dependencies:
@@ -3266,6 +3267,10 @@ prom-client@^10.2.2, prom-client@~10.2.2:
   resolved "https://registry.npmjs.org/prom-client/-/prom-client-10.2.3.tgz#a51bf21c239c954a6c5be4b1361fdd380218bb41"
   dependencies:
     tdigest "^0.1.1"
+
+prometheus-extended-gauge@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.npmjs.org/prometheus-extended-gauge/-/prometheus-extended-gauge-0.1.2.tgz#858d53b8a038dc0dacc6b50816e7c516ec054217"
 
 prometheus-gc-stats@^0.5.0:
   version "0.5.0"

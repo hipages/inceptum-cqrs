@@ -1,6 +1,6 @@
 import { suite, test, slow, timeout } from 'mocha-typescript';
 import { must } from 'must';
-import { Context, InceptumApp } from 'inceptum';
+import { Context, TestInceptumApp } from 'inceptum';
 
 import { CQRSPlugin } from '../../../src/cqrs/plugin/CQRSPlugin';
 import { CQRS } from '../../../src/cqrs/CQRS';
@@ -13,7 +13,7 @@ class CQRSPluginTest {
     protected app;
 
     before() {
-      this.app = new InceptumApp();
+      this.app = new TestInceptumApp();
     }
 
     after() {
@@ -46,7 +46,7 @@ class CQRSPluginTest {
 
     @test
     async 'CommandExecutors are registered'() {
-      const app = new InceptumApp();
+      const app = new TestInceptumApp();
       app.register(new CQRSPlugin());
       const context = app.getContext();
       context.registerSingletons(MarkTodoDoneCommand, CreateTodoCommand,  TodoAggregate,  CreateTodoCommandExecutor,  MarkTodoDoneCommandExecutor,  TodoCreatedEventExecutor,  TodoMarkedDoneEventExecutor);
@@ -58,7 +58,7 @@ class CQRSPluginTest {
     }
     @test
     async 'EventExecutors are registered'() {
-      const app = new InceptumApp();
+      const app = new TestInceptumApp();
       app.register(new CQRSPlugin());
       const context = app.getContext();
       context.registerSingletons(MarkTodoDoneCommand, CreateTodoCommand,  TodoAggregate,  CreateTodoCommandExecutor,  MarkTodoDoneCommandExecutor,  TodoCreatedEventExecutor,  TodoMarkedDoneEventExecutor);

@@ -1,7 +1,7 @@
 import { suite, test, slow, timeout } from 'mocha-typescript';
 import { must } from 'must';
 import * as sinon from 'sinon';
-import { Context, InceptumApp } from 'inceptum';
+import { Context, TestInceptumApp } from 'inceptum';
 import { SwaggerCQRSMiddleware } from '../../../src/cqrs/plugin/SwaggerCQRSMiddleware';
 import { CQRS } from '../../../src/cqrs/CQRS';
 import { CQRSPlugin } from '../../../src/cqrs/plugin/CQRSPlugin';
@@ -32,14 +32,20 @@ const swaggerPathCqrsCommandReq = {
 const swaggerOperationCqrsGetReq = {
   swagger: {
     operation: {
-      'x-inceptum-cqrs-get': 'id:587678d0-df01-11e7-9325-f329215fa342',
+      'x-inceptum-cqrs-get': 'TheType',
+    },
+    params: {
+      id: { value: '587678d0-df01-11e7-9325-f329215fa342' },
     },
   },
 };
 const swaggerPathCqrsGetReq = {
   swagger: {
     path: {
-      'x-inceptum-cqrs-get': 'id:587678d0-df01-11e7-9325-f329215fa342',
+      'x-inceptum-cqrs-get': 'TheType',
+    },
+    params: {
+      id: { value: '587678d0-df01-11e7-9325-f329215fa342' },
     },
   },
 };
@@ -124,12 +130,12 @@ suite('cqrs/plugin/SwaggerCQRSMiddleware', () => {
     test('Be able to retrieve get from the operation', async () => {
       const swaggerMidware = new SwaggerCQRSMiddleware();
       const result = swaggerMidware.getCQRSGet(swaggerOperationCqrsGetReq);
-      result.must.eql('id:587678d0-df01-11e7-9325-f329215fa342');
+      result.must.eql('TheType');
     });
     test('Be able to retrieve get from the path', async () => {
       const swaggerMidware = new SwaggerCQRSMiddleware();
       const result = swaggerMidware.getCQRSGet(swaggerPathCqrsGetReq);
-      result.must.eql('id:587678d0-df01-11e7-9325-f329215fa342');
+      result.must.eql('TheType');
     });
     test('Check if request contains an get in operation', async () => {
       const swaggerMidware = new SwaggerCQRSMiddleware();
@@ -148,7 +154,7 @@ suite('cqrs/plugin/SwaggerCQRSMiddleware', () => {
   suite('Can set CQRS object', () => {
     test('set the CQRS object correctly', async () => {
       const swaggerMidware = new SwaggerCQRSMiddleware();
-      const app = new InceptumApp();
+      const app = new TestInceptumApp();
       app.register(new CQRSPlugin());
       const context = app.getContext();
       context.registerSingletons(MarkTodoDoneCommand, CreateTodoCommand, TodoAggregate, CreateTodoCommandExecutor, MarkTodoDoneCommandExecutor, TodoCreatedEventExecutor, TodoMarkedDoneEventExecutor);
@@ -163,7 +169,7 @@ suite('cqrs/plugin/SwaggerCQRSMiddleware', () => {
   suite('Can register in swagger', () => {
     test('Register CQRS correctly in the app ', async () => {
       const swaggerMidware = new SwaggerCQRSMiddleware();
-      const app = new InceptumApp();
+      const app = new TestInceptumApp();
       app.register(new CQRSPlugin());
       swaggerMidware.register(app);
       const context = app.getContext();
@@ -222,7 +228,7 @@ suite('cqrs/plugin/SwaggerCQRSMiddleware', () => {
         },
       };
       const eventExecutors = [new TodoCreatedEventExecutor(), new TodoMarkedDoneEventExecutor()];
-      const app = new InceptumApp();
+      const app = new TestInceptumApp();
       app.register(new CQRSPlugin());
       const context = app.getContext();
       await app.start();
@@ -254,6 +260,7 @@ suite('cqrs/plugin/SwaggerCQRSMiddleware', () => {
         send: (sendValue) => {
           sendValue.must.eql({
             aggregateName: 'test aggregate',
+            aggregateType: 'TheType',
             aggregateId: '587678d0-df01-11e7-9325-f329215fa342',
           });
         },
@@ -261,10 +268,11 @@ suite('cqrs/plugin/SwaggerCQRSMiddleware', () => {
       const cqrs = new CQRS(new InMemoryAggregateEventStore([]));
       sinon.stub(cqrs, 'getAggregate').returns({
         aggregateName: 'test aggregate',
+        aggregateType: 'TheType',
         aggregateId: '587678d0-df01-11e7-9325-f329215fa342',
       });
       swaggerMidware.setCQRS(cqrs);
-      const result = swaggerMidware.handleCQRSGet(swaggerOperationCqrsGetReq, res);
+      const result = await swaggerMidware.handleCQRSGet(swaggerOperationCqrsGetReq, res);
     });
   });
 });

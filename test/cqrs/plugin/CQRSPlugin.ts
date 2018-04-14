@@ -1,6 +1,6 @@
 import { suite, test, slow, timeout } from 'mocha-typescript';
 import { must } from 'must';
-import { Context, InceptumApp } from 'inceptum';
+import { Context, TestInceptumApp } from 'inceptum';
 
 import { CQRSPlugin } from '../../../src/cqrs/plugin/CQRSPlugin';
 import { CQRS } from '../../../src/cqrs/CQRS';
@@ -10,7 +10,7 @@ import { Command } from '../../../src/cqrs/command/Command';
 suite('cqrs/plugin/CQRSPlugin', () => {
   suite('Decorators are picked up', () => {
     test('Command classes are registered', async () => {
-      const app = new InceptumApp();
+      const app = new TestInceptumApp();
       app.register(new CQRSPlugin());
       const context = app.getContext();
       context.registerSingletons(MarkTodoDoneCommand, CreateTodoCommand,  TodoAggregate,  CreateTodoCommandExecutor,  MarkTodoDoneCommandExecutor,  TodoCreatedEventExecutor,  TodoMarkedDoneEventExecutor);
@@ -21,7 +21,7 @@ suite('cqrs/plugin/CQRSPlugin', () => {
       await app.stop();
     });
     test('Aggregate classes are registered', async () => {
-      const app = new InceptumApp();
+      const app = new TestInceptumApp();
       app.register(new CQRSPlugin());
       const context = app.getContext();
       context.registerSingletons(MarkTodoDoneCommand, CreateTodoCommand,  TodoAggregate,  CreateTodoCommandExecutor,  MarkTodoDoneCommandExecutor,  TodoCreatedEventExecutor,  TodoMarkedDoneEventExecutor);
@@ -32,7 +32,7 @@ suite('cqrs/plugin/CQRSPlugin', () => {
       await app.stop();
     });
     test('CommandExecutors are registered', async () => {
-      const app = new InceptumApp();
+      const app = new TestInceptumApp();
       app.register(new CQRSPlugin());
       const context = app.getContext();
       context.registerSingletons(MarkTodoDoneCommand, CreateTodoCommand,  TodoAggregate,  CreateTodoCommandExecutor,  MarkTodoDoneCommandExecutor,  TodoCreatedEventExecutor,  TodoMarkedDoneEventExecutor);
@@ -43,7 +43,7 @@ suite('cqrs/plugin/CQRSPlugin', () => {
       await app.stop();
     });
     test('EventExecutors are registered', async () => {
-      const app = new InceptumApp();
+      const app = new TestInceptumApp();
       app.register(new CQRSPlugin());
       const context = app.getContext();
       context.registerSingletons(MarkTodoDoneCommand, CreateTodoCommand,  TodoAggregate,  CreateTodoCommandExecutor,  MarkTodoDoneCommandExecutor,  TodoCreatedEventExecutor,  TodoMarkedDoneEventExecutor);
