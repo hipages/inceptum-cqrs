@@ -1,5 +1,4 @@
 import { Stream } from 'stream';
-import * as lruCache from 'lru-cache';
 import { AutowireGroup, StartMethod, AutowireGroupDefinitions, SingletonDefinition, LogManager } from 'inceptum';
 import { AggregateEventStore } from './event/store/AggregateEventStore';
 import { ExecutionContext } from './ExecutionContext';
@@ -13,7 +12,7 @@ const MAX_AGGREGATE_CACHE_AGE = 1000 * 60 * 60; // one hour
 
 const Logger = LogManager.getLogger(__filename);
 
-class CacheInvalidatingAggregateEventStore extends AggregateEventStore {
+class NotifyingAggregateEventStore extends AggregateEventStore {
   baseEventStore: AggregateEventStore;
   cqrs: CQRS;
 
@@ -26,51 +25,33 @@ class CacheInvalidatingAggregateEventStore extends AggregateEventStore {
     return await this.baseEventStore.getEventsOf(aggregateId);
   }
   async commitEvent(aggregateEvent: any): Promise<void> {
-    const executor = EventExecutor.getEventExecutor(aggregateEvent, this.cqrs.eventExecutors);
-    if (!executor) {
+    if (!this.cqrs.hasExecutorForEvent(aggregateEvent)) {
       throw new Error(`Unknown event to commit ${aggregateEvent.constructor.name}`);
     }
-    this.cqrs.aggregateCache.del(executor.getAggregateId(aggregateEvent));
     await this.baseEventStore.commitEvent(aggregateEvent);
-    this.cqrs.eventStream.emit('event', aggregateEvent);
-    await this.notifyEventListeners(aggregateEvent);
+    await this.cqrs.notifyEventListeners(aggregateEvent);
   }
   async commitAllEvents(aggregateEvents: any[]): Promise<void> {
-    aggregateEvents.forEach((aggregateEvent) => {
-      const executor = EventExecutor.getEventExecutor(aggregateEvent, this.cqrs.eventExecutors);
-      if (!executor) {
+    for (const aggregateEvent of aggregateEvents) {
+      if (!this.cqrs.hasExecutorForEvent(aggregateEvent)) {
         throw new Error(`Unknown event to commit ${aggregateEvent.constructor.name}`);
       }
-      this.cqrs.aggregateCache.del(executor.getAggregateId(aggregateEvent));
-    });
+    }
     await this.baseEventStore.commitAllEvents(aggregateEvents);
-    aggregateEvents.forEach((aggregateEvent) => this.cqrs.eventStream.emit('event', aggregateEvent));
-    await aggregateEvents.reduce(async (prevPromise, aggregateEvent) => {
-      await prevPromise;
-      await this.notifyEventListeners(aggregateEvent);
-    }, Promise.resolve());
-  }
-  private async notifyEventListeners(aggregateEvent: any) {
-    await this.cqrs.eventListeners.reduce(async (prevPromise, eventListener: EventListener) => {
-      await prevPromise;
-      try {
-        await eventListener.eventCommitted(aggregateEvent);
-      } catch (e) {
-        Logger.error(e, 'There was an error in event listener');
+    for (const aggregateEvent of aggregateEvents) {
+      await this.cqrs.notifyEventListeners(aggregateEvent);
+    }
       }
-    }, Promise.resolve());
   }
-}
 
 export abstract class EventListener {
   abstract async eventCommitted(event: any);
 }
 
 export class CQRS {
-  aggregateEventStore: AggregateEventStore;
+  private aggregateEventStore: NotifyingAggregateEventStore;
   commandClasses = new Map<string, Function>();
   aggregateClasses = new Map<string, Function>();
-  aggregateCache: any;
   eventStream = new Stream();
 
   @AutowireGroup('cqrs:commandExecutor')
@@ -114,11 +95,7 @@ export class CQRS {
    * @param {AggregateEventStore} aggregateEventStore The event store to use.
    */
   constructor(aggregateEventStore: AggregateEventStore) {
-    this.aggregateCache = lruCache({
-      max: MAX_AGGREGATE_CACHE_ENTRIES,
-      maxAge: MAX_AGGREGATE_CACHE_AGE,
-    });
-    this.aggregateEventStore = new CacheInvalidatingAggregateEventStore(aggregateEventStore, this);
+    this.aggregateEventStore = new NotifyingAggregateEventStore(aggregateEventStore, this);
   }
   newExecutionContext(): ExecutionContext {
     const execContext = new ExecutionContext(this.aggregateEventStore, this.commandExecutors, this.eventExecutors);
@@ -144,15 +121,7 @@ export class CQRS {
     return (await this.getAggregate(aggregateId)) as T;
   }
   async getAggregate(aggregateId: string): Promise<Aggregate> {
-    const cachedAggregate = this.aggregateCache.get(aggregateId);
-    if (cachedAggregate) {
-      return cachedAggregate;
-    }
-    const aggregate = await this.getAggregateInternal(aggregateId);
-    if (aggregate) {
-      this.aggregateCache.set(aggregateId, aggregate);
-    }
-    return aggregate;
+    return await this.getAggregateInternal(aggregateId);
   }
   private async getAggregateInternal(aggregateId: string): Promise<Aggregate> {
     const allEvents = await this.aggregateEventStore.getEventsOf(aggregateId);
@@ -190,5 +159,19 @@ export class CQRS {
   }
   public registerEventExecutor<E, A extends Aggregate>(eventExecutor: EventExecutor<E, A>) {
     this.eventExecutors.push(eventExecutor);
+  }
+  async notifyEventListeners(aggregateEvent: any) {
+    this.eventStream.emit('event', aggregateEvent);
+    await this.eventListeners.reduce(async (prevPromise, eventListener: EventListener) => {
+      await prevPromise;
+      try {
+        await eventListener.eventCommitted(aggregateEvent);
+      } catch (e) {
+        Logger.error(e, 'There was an error in event listener');
+      }
+    }, Promise.resolve());
+  }
+  hasExecutorForEvent(event: any) {
+    return !!EventExecutor.getEventExecutor(event, this.eventExecutors);
   }
 }
