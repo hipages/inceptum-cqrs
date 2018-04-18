@@ -8,10 +8,14 @@ import { AbstractCQRSMiddleware } from './AbstractCQRSMiddleware';
 
 const logger = LogManager.getLogger(__filename);
 
-const SWAGGER_CQRS_COMMAND_PROPERTY = 'x-inceptum-cqrs-command';
-const SWAGGER_CQRS_GET_PROPERTY = 'x-inceptum-cqrs-get';
-
-export class SwaggerCQRSMiddleware extends AbstractCQRSMiddleware {
+/**
+ * A simpler CQRS middleware that registers a set of paths:
+ * - GET `/<aggregateName>/<aggregateId>`: Gets an aggregate by Id
+ * - POST `/<aggregateName>`: Executes a command called: `Create<AggregateName>` with the body of the request as the payload
+ * - POST `/<aggregateName>/<aggregateId>/<commandName>`: Executes a command called `commandName` or alternatively `<CommandName><AggregateName>`, with the body of the request as the payload (the aggregateId will be injected in the payload)
+ * - DELETE `/<aggregateName>/<aggregateId>`: Executes a command called: `Delete<AggregateName>` with the body of the request as the payload (the aggregateId will be injected in the payload)
+ */
+export class SimpleCQRSMiddleware extends AbstractCQRSMiddleware {
   handlerCache: Map<any, any>;
 
   /**
@@ -23,55 +27,31 @@ export class SwaggerCQRSMiddleware extends AbstractCQRSMiddleware {
     this.handlerCache = new Map();
   }
 
-  /**
-   * @private
-   * @param req
-   * @returns {boolean}
-   */
-  hasCQRSCommand(req) {
-    return !!this.getCQRSCommand(req);
-  }
-
-  hasCQRSGet(req) {
-    return !!this.getCQRSGet(req);
-  }
-
-  /**
-   * @private
-   * @param req
-   * @returns {*}
-   */
-  getCQRSCommand(req) {
-    if (!req || !req.swagger) {
-      return undefined;
-    }
-    if (req.swagger.operation && req.swagger.operation[SWAGGER_CQRS_COMMAND_PROPERTY]) {
-      return req.swagger.operation[SWAGGER_CQRS_COMMAND_PROPERTY];
-    }
-    if (req.swagger.path && req.swagger.path[SWAGGER_CQRS_COMMAND_PROPERTY]) {
-      return req.swagger.path[SWAGGER_CQRS_COMMAND_PROPERTY];
-    }
-    return undefined;
-  }
-
-  getCQRSGet(req) {
-    if (!req || !req.swagger) {
-      return undefined;
-    }
-    if (req.swagger.operation && req.swagger.operation[SWAGGER_CQRS_GET_PROPERTY]) {
-      return req.swagger.operation[SWAGGER_CQRS_GET_PROPERTY];
-    }
-    if (req.swagger.path && req.swagger.path[SWAGGER_CQRS_GET_PROPERTY]) {
-      return req.swagger.path[SWAGGER_CQRS_GET_PROPERTY];
-    }
-    return undefined;
-  }
-
   register(expressApp) {
     const self = this;
-    logger.debug('Registering CQRS Swagger middleware');
+    logger.debug('Registering CQRS Simple middleware');
+
+    // Register Gets
+    this.cqrs.getRegisteredAggregates().forEach((aggregateName) => {
+      logger.debug(`Registering GET /${aggregateName}/:aggregateId`);
+      expressApp.get(`/${aggregateName}/:aggregateId`, (req, res) => {
+        this.handleCQRSGetWithName(req, res, aggregateName, req.params.aggregateId);
+      });
+    });
+
+    // Register Create commands
+    this.cqrs.getRegisteredAggregates().forEach((aggregateName) => {
+      
+      logger.debug(`Registering GET /${aggregateName}/:aggregateId`);
+      expressApp.get(`/${aggregateName}/:aggregateId`, (req, res) => {
+        this.handleCQRSGetWithName(req, res, aggregateName, req.params.aggregateId);
+      });
+    });
+
+
     expressApp.use(async (req, res, next) => {
       try {
+        
         if (self.hasCQRSCommand(req)) {
           // There's a controller to be called.
           await self.handleCQRSCommand(req, res);

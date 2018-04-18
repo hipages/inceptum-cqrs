@@ -145,10 +145,16 @@ export class CQRS {
     Logger.info(`Registering aggregate ${name}`);
     this.aggregateClasses.set(name, aggregateClass);
   }
+  getRegisteredAggregates(): string[] {
+    return Array.from(this.aggregateClasses.keys());
+  }
 
   registerCommandClass(name: string, commandClass: Function) {
     Logger.info(`Registering command ${name}`);
     this.commandClasses.set(name, commandClass);
+  }
+  getRegisteredCommands(): string[] {
+    return Array.from(this.commandClasses.keys());
   }
   private instantiateAggregate(aggregateType: string, aggregateId: string): Aggregate {
     const aggregateClass = this.aggregateClasses.has(aggregateType) ? this.aggregateClasses.get(aggregateType) : Aggregate;
