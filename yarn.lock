@@ -20,6 +20,13 @@
   version "3.5.20"
   resolved "https://registry.npmjs.org/@types/bluebird/-/bluebird-3.5.20.tgz#f6363172add6f4eabb8cada53ca9af2781e8d6a1"
 
+"@types/body-parser@*":
+  version "1.16.8"
+  resolved "https://registry.npmjs.org/@types/body-parser/-/body-parser-1.16.8.tgz#687ec34140624a3bec2b1a8ea9268478ae8f3be3"
+  dependencies:
+    "@types/express" "*"
+    "@types/node" "*"
+
 "@types/bunyan@1.8.0":
   version "1.8.0"
   resolved "https://registry.npmjs.org/@types/bunyan/-/bunyan-1.8.0.tgz#913bf718a2f4dd1efa063e808cab76609289c986"
@@ -33,6 +40,21 @@
 "@types/events@*":
   version "1.2.0"
   resolved "https://registry.npmjs.org/@types/events/-/events-1.2.0.tgz#81a6731ce4df43619e5c8c945383b3e62a89ea86"
+
+"@types/express-serve-static-core@*":
+  version "4.11.1"
+  resolved "https://registry.npmjs.org/@types/express-serve-static-core/-/express-serve-static-core-4.11.1.tgz#f6f7212382d59b19d696677bcaa48a37280f5d45"
+  dependencies:
+    "@types/events" "*"
+    "@types/node" "*"
+
+"@types/express@*", "@types/express@^4.11.1":
+  version "4.11.1"
+  resolved "https://registry.npmjs.org/@types/express/-/express-4.11.1.tgz#f99663b3ab32d04cb11db612ef5dd7933f75465b"
+  dependencies:
+    "@types/body-parser" "*"
+    "@types/express-serve-static-core" "*"
+    "@types/serve-static" "*"
 
 "@types/generic-pool@^3.1.2":
   version "3.1.2"
@@ -52,6 +74,10 @@
   resolved "https://registry.npmjs.org/@types/jsonwebtoken/-/jsonwebtoken-7.2.6.tgz#8d018c21ca5910b5eb3ebcb385656606a215032f"
   dependencies:
     "@types/node" "*"
+
+"@types/mime@*":
+  version "2.0.0"
+  resolved "https://registry.npmjs.org/@types/mime/-/mime-2.0.0.tgz#5a7306e367c539b9f6543499de8dd519fac37a8b"
 
 "@types/mocha@^2.2.41":
   version "2.2.48"
@@ -77,6 +103,13 @@
   dependencies:
     "@types/node" "*"
     "@types/pg-types" "*"
+
+"@types/serve-static@*":
+  version "1.13.1"
+  resolved "https://registry.npmjs.org/@types/serve-static/-/serve-static-1.13.1.tgz#1d2801fa635d274cd97d4ec07e26b21b44127492"
+  dependencies:
+    "@types/express-serve-static-core" "*"
+    "@types/mime" "*"
 
 "@types/source-map-support@^0.2.28":
   version "0.2.28"
@@ -2528,7 +2561,7 @@ lodash@2.4.2:
   version "2.4.2"
   resolved "https://registry.npmjs.org/lodash/-/lodash-2.4.2.tgz#fadd834b9683073da179b3eae6d9c0d15053f73e"
 
-lodash@^4.0.0, lodash@^4.11.1, lodash@^4.13.1, lodash@^4.14.0, lodash@^4.17.4, lodash@^4.2.1, lodash@^4.7.0:
+lodash@^4.0.0, lodash@^4.11.1, lodash@^4.13.1, lodash@^4.14.0, lodash@^4.17.4, lodash@^4.17.5, lodash@^4.2.1, lodash@^4.7.0:
   version "4.17.5"
   resolved "https://registry.npmjs.org/lodash/-/lodash-4.17.5.tgz#99a92d65c0272debe8c96b6057bc8fbfa3bed511"
 
@@ -4158,6 +4191,12 @@ traverse@^0.6.6, traverse@~0.6.6:
 trim-right@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/trim-right/-/trim-right-1.0.1.tgz#cb2e1203067e0c8de1f614094b9fe45704ea6003"
+
+ts-mockito@^2.2.7:
+  version "2.3.0"
+  resolved "https://registry.npmjs.org/ts-mockito/-/ts-mockito-2.3.0.tgz#c1836f04ec037cad82cfd7b3b66d52fc75adfcc7"
+  dependencies:
+    lodash "^4.17.5"
 
 ts-node@3.3.0:
   version "3.3.0"
