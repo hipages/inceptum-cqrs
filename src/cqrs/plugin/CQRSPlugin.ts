@@ -5,6 +5,7 @@ import { Command } from '../command/Command';
 
 import { ReturnToCallerError } from '../error/ReturnToCallerError';
 import { SwaggerCQRSMiddleware } from './SwaggerCQRSMiddleware';
+import { SimpleCQRSMiddleware } from './SimpleCQRSMiddleware';
 
 const logger = LogManager.getLogger(__filename);
 
@@ -44,15 +45,20 @@ export class CQRSPlugin implements Plugin {
 
     const express = pluginContext.get(WebPlugin.CONTEXT_APP_KEY);
     if (express) {
-      const middleware = new SwaggerCQRSMiddleware();
-      middleware.register(express);
-
-      const wireDefinition = new BaseSingletonDefinition<WireCQRSPlugin>(WireCQRSPlugin);
-      // wireDefinition.withLazyLoading(false);
-      wireDefinition.setPropertyByValue('middleware', middleware);
-      // wireDefinition.setPropertyByRef('cqrs', 'CQRS');
-      // wireDefinition.startFunction('wire');
-      context.registerDefinition(wireDefinition);
+      if (app.hasRegisteredPlugin('SwaggerPlugin')) {
+        const middleware = new SwaggerCQRSMiddleware();
+        middleware.register(express);
+        const wireDefinition = new BaseSingletonDefinition<WireCQRSPlugin>(WireCQRSPlugin, 'SwaggerPluginCQRSWirer');
+        wireDefinition.setPropertyByValue('middleware', middleware);
+        context.registerDefinition(wireDefinition);
+      }
+      if (!app.hasConfig('cqrs') || !app.hasConfig('cqrs.registerDefaultRoutes') || app.getConfig('cqrs.registerDefaultRoutes', true) === true) {
+        const middleware = new SimpleCQRSMiddleware();
+        middleware.register(express);
+        const wireDefinition = new BaseSingletonDefinition<WireCQRSPlugin>(WireCQRSPlugin, 'SimpleCQRSWirer');
+        wireDefinition.setPropertyByValue('middleware', middleware);
+        context.registerDefinition(wireDefinition);
+      }
     }
   }
 

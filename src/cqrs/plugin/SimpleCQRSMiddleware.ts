@@ -1,5 +1,6 @@
 import { LogManager } from 'inceptum';
 import { Request } from 'express';
+import * as bodyParser from 'body-parser';
 import * as stringify from 'json-stringify-safe';
 import { CQRS } from '../CQRS';
 import { Command } from '../command/Command';
@@ -12,6 +13,7 @@ const logger = LogManager.getLogger(__filename);
  * A simpler CQRS middleware that registers a set of paths:
  * - GET `/<aggregateName>/<aggregateId>`: Gets an aggregate by Id
  * - POST `/<aggregateName>`: Executes a command called: `Create<AggregateName>` with the body of the request as the payload
+ * - POST `/submit/<commandName>`: Executes a command called `commandName` with the body of the request as the payload (the aggregateId will be injected in the payload)
  * - POST `/<aggregateName>/<aggregateId>/<commandName>`: Executes a command called `commandName` or alternatively `<CommandName><AggregateName>`, with the body of the request as the payload (the aggregateId will be injected in the payload)
  * - DELETE `/<aggregateName>/<aggregateId>`: Executes a command called: `Delete<AggregateName>` with the body of the request as the payload (the aggregateId will be injected in the payload)
  */
@@ -34,95 +36,88 @@ export class SimpleCQRSMiddleware extends AbstractCQRSMiddleware {
     // Register Gets
     this.cqrs.getRegisteredAggregates().forEach((aggregateName) => {
       logger.debug(`Registering GET /${aggregateName}/:aggregateId`);
-      expressApp.get(`/${aggregateName}/:aggregateId`, (req, res) => {
-        this.handleCQRSGetWithName(req, res, aggregateName, req.params.aggregateId);
+      expressApp.get(`/${aggregateName}/:aggregateId`, async (req, res) => {
+        await this.handleCQRSGetWithName(req, res, aggregateName, req.params.aggregateId);
       });
     });
 
     // Register Create commands
     this.cqrs.getRegisteredAggregates().forEach((aggregateName) => {
-      
-      logger.debug(`Registering GET /${aggregateName}/:aggregateId`);
-      expressApp.get(`/${aggregateName}/:aggregateId`, (req, res) => {
-        this.handleCQRSGetWithName(req, res, aggregateName, req.params.aggregateId);
+      const commandName = this.getCreateCommandNameFor(aggregateName);
+      if (commandName) {
+        logger.debug(`Registering POST /${aggregateName}`);
+        expressApp.post(`/${aggregateName}`, async (req, res) => {
+          if (req.body) {
+            await this.handleCQRSCommandWithName(req, res, commandName, req.body);
+          } else {
+            await this.handleCQRSCommandWithName(req, res, commandName, {});
+          }
+        });
+      }
+    });
+
+    // Register Delete commands
+    this.cqrs.getRegisteredAggregates().forEach((aggregateName) => {
+      const commandName = this.getDeleteCommandNameFor(aggregateName);
+      if (commandName) {
+        logger.debug(`Registering DELETE /${aggregateName}/:aggregateId`);
+        expressApp.delete(`/${aggregateName}/:aggregateId`, async (req, res) => {
+          if (req.body) {
+            await this.handleCQRSCommandWithName(req, res, commandName, {...req.body, aggregateId: req.params.aggregateId});
+          } else {
+            await this.handleCQRSCommandWithName(req, res, commandName, {aggregateId: req.params.aggregateId});
+          }
+        });
+      }
+    });
+
+    // Register submit commands
+    this.cqrs.getRegisteredCommands().forEach((commandName) => {
+      logger.debug(`Registering POST /submit/${commandName}`);
+      expressApp.post(`/submit/${commandName}`, async (req, res) => {
+        if (req.body) {
+          await this.handleCQRSCommandWithName(req, res, commandName, {...req.body});
+        } else {
+          res.status(400).send({err: 'Missing body for command. At least an aggregateId must be passed'});
+        }
       });
     });
 
-
-    expressApp.use(async (req, res, next) => {
-      try {
-        
-        if (self.hasCQRSCommand(req)) {
-          // There's a controller to be called.
-          await self.handleCQRSCommand(req, res);
-        } else if (self.hasCQRSGet(req)) {
-          await self.handleCQRSGet(req, res);
-        } else {
-          // No cqrs command defined, let it pass
-          next();
+    // Register commands
+    this.cqrs.getRegisteredAggregates().forEach((aggregateName) => {
+      logger.debug(`Registering POST /${aggregateName}/:aggregateId/:commandName`);
+      expressApp.post(`/${aggregateName}/:aggregateId/:commandName`, async (req, res) => {
+        const commandName = this.inferCommandName(req.params.aggregateName, req.params.commandName);
+        if (!commandName) {
+          res.status(404).send({err: `Unknown command ${req.params.commandName} for aggregate ${req.params.aggregateName}`});
+          return;
         }
-      } catch (e) {
-        next(e);
-      }
+        if (req.body) {
+          await this.handleCQRSCommandWithName(req, res, req.params.commandName, {...req.body, aggregateId: req.params.aggregateId});
+        } else {
+          await this.handleCQRSCommandWithName(req, res, req.params.commandName, {aggregateId: req.params.aggregateId});
+        }
+      });
     });
   }
 
-  /**
-   * @private
-   * @param req
-   * @returns {Request}
-   */
-  async handleCQRSCommand(req, res) {
-    const cqrsCommand = this.getCQRSCommand(req);
-    if (cqrsCommand.indexOf(':') > 0) {
-      const parts = cqrsCommand.split(':', 2);
-      return await this.handleCQRSCommandWithParamName(req, res, parts[0], parts[1]);
-    }
-    return await this.handleCQRSCommandWithParamName(req, res, cqrsCommand, 'body');
+  private inferCommandName(aggregateName, commandName) {
+    return this.getCommandNameFor([ commandName, `${commandName}${aggregateName}`, `${commandName}${aggregateName}Command`]);
   }
 
-
-  /**
-   * @private
-   * @param req
-   * @returns {Request}
-   */
-  async handleCQRSGet(req, res) {
-    const cqrsGet = this.getCQRSGet(req);
-    if (cqrsGet.indexOf(':') > 0) {
-      const parts = cqrsGet.split(':', 2);
-      return await this.handleCQRSGetWithParamName(req, res, parts[0], parts[1]);
-    }
-    return await this.handleCQRSGetWithParamName(req, res, cqrsGet, 'id');
+  private getCreateCommandNameFor(aggregateName: string): string {
+    return this.getCommandNameFor([ `Create${aggregateName}`, `Create${aggregateName}Command` ]);
   }
 
-  async handleCQRSGetWithParamName(req, res, aggregateName, paramName) {
-    return this.handleCQRSGetWithName(req, res, aggregateName, this.getPayload(req, paramName));
+  private getDeleteCommandNameFor(aggregateName: string): string {
+    return this.getCommandNameFor([ `Delete${aggregateName}`, `Delete${aggregateName}Command` ]);
   }
 
-  /**
-   * @private
-   * @param req
-   * @param res
-   * @param commandName
-   * @param bodyParamName
-   * @returns {*}
-   */
-  async handleCQRSCommandWithParamName(req, res, commandName, bodyParamName) {
-    const payload = this.getPayload(req, bodyParamName);
-    return this.handleCQRSCommandWithName(req, res, commandName, payload);
-  }
-
-  /**
-   * @private
-   * @param req
-   * @param bodyParamName
-   * @returns {*}
-   */
-  // tslint:disable-next-line:prefer-function-over-method
-  getPayload(req, bodyParamName) {
-    if (req.swagger.params && req.swagger.params[bodyParamName]) {
-      return req.swagger.params[bodyParamName].value;
+  private getCommandNameFor(names: string[]): string {
+    for (const name of names) {
+      if (this.cqrs.getRegisteredCommands().indexOf(name) >= 0) {
+        return name;
+      }
     }
     return undefined;
   }
