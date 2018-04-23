@@ -39,6 +39,10 @@ export class TodoCreatedEventExecutor extends EventExecutor<TodoCreatedEvent, To
     return;
   }
 
+  getEventOrdinal(e) {
+    return 0;
+  }
+
   public canExecute(event: any): boolean {
     return event instanceof TodoCreatedEvent;
   }
@@ -73,6 +77,10 @@ export class TodoMarkedDoneEventExecutor extends EventExecutor<TodoMarkedDoneEve
 
   setEventOrdinal(e, n) {
     return;
+  }
+
+  getEventOrdinal(e) {
+    return 0;
   }
 
   public apply(event: TodoMarkedDoneEvent, aggregate: TodoAggregate) {

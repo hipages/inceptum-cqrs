@@ -12,7 +12,7 @@ const MAX_AGGREGATE_CACHE_AGE = 1000 * 60 * 60; // one hour
 
 const Logger = LogManager.getLogger(__filename);
 
-export class NotifyingAggregateEventStore extends AggregateEventStore {
+class NotifyingAggregateEventStore extends AggregateEventStore {
   baseEventStore: AggregateEventStore;
   cqrs: CQRS;
 
@@ -128,7 +128,7 @@ export class CQRS {
     if (!allEvents || allEvents.length === 0) {
       return null;
     }
-    return ExecutionContext.applyEvents(allEvents, this.eventExecutors, this.aggregateClasses);
+    return Aggregate.applyEvents(allEvents, this.eventExecutors, this.aggregateClasses);
   }
   deserialiseCommand<T extends Command>(obj, commandType): T {
     if (!commandType && !Object.hasOwnProperty.call(obj, Command.commandFieldType)) {

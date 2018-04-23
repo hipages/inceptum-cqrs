@@ -105,8 +105,7 @@ export class Aggregate {
   }
 
   /**
-   * Increate Event total by 1
-   * Update event counter with event ordinal property if any
+   * Increate events counter by 1
    *
    * @param event
    * @returns number
@@ -120,6 +119,11 @@ export class Aggregate {
     return this;
   }
 
+  /**
+   *
+   * @param eventId
+   * @returns boolean
+   */
   eventApplied(eventId): boolean {
     return this.eventsApplied.indexOf(eventId) > -1;
   }
