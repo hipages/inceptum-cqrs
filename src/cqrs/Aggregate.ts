@@ -13,13 +13,23 @@ export class Aggregate {
     const aggregate = Aggregate.instantiateAggregate(firstEventExecutor.getAggregateType(), firstEventExecutor.getAggregateId(firstEvent), aggregateClasses);
     allEvents.forEach((e) => {
       const eventExecutor = EventExecutor.getEventExecutor(e, eventExecutors);
-      if (eventExecutor) {
-        eventExecutor.apply(e, aggregate);
-      } else {
-        throw new Error(`Unknown event during getAggregate: ${firstEvent.constructor.name}`);
-      }
+      Aggregate.applyEventOnAggregate(e, eventExecutor, aggregate);
     });
     return aggregate;
+  }
+
+  public static applyEventOnAggregate(e: Object, eventExecutor: EventExecutor<any, any>, aggregate: Aggregate) {
+    if (eventExecutor) {
+      if (aggregate.eventApplied(eventExecutor.getEventId(e))) {
+        return;
+      }
+
+      eventExecutor.apply(e, aggregate);
+      const eventId = eventExecutor.getEventId(e);
+      aggregate.applyEvent(eventId);
+    } else {
+      throw new Error(`Unknown event during getEventExecutor: ${e.constructor.name}`);
+    }
   }
 
   public static instantiateAggregate(aggregateType: string, aggregateId: string, aggregateClasses: Map<string, Function>): Aggregate {
@@ -28,28 +38,39 @@ export class Aggregate {
   }
 
   private aggregateRoles: Map<string, Array<string>>;
+
   aggregateId: string;
   aggregateType: string;
+  private eventsCounter: number; // number of events in aggregate
+  private eventsApplied: string[];
+
   constructor(aggregateType: string, aggregateId: string) {
     this.aggregateType = aggregateType;
     this.aggregateId = aggregateId;
     this.aggregateRoles = new Map();
+    this.eventsCounter = 0;
+    this.eventsApplied = [];
   }
+
   getAggregateType() {
     return this.aggregateType;
   }
+
   getAggregateId() {
     return this.aggregateId;
   }
+
   getFullId() {
     return `${this.aggregateType}:${this.aggregateId}`;
   }
+
   /**
    * Gets the extra roles that this aggregate grants
    */
   getAggregateRoles(): Map<string, Array<string>>  {
     return this.aggregateRoles;
   }
+
   /**
    * Gets the extra roles that this aggregate grants to an entity
    * @param {string} Optional. The id of the entity we're asking about.
@@ -61,6 +82,7 @@ export class Aggregate {
     }
     return [];
   }
+
   addAggregateRole(entityId: string, roles: Array<string>) {
     if (this.aggregateRoles.has(entityId)) {
       this.aggregateRoles.set(entityId, this.aggregateRoles.get(entityId).concat(roles));
@@ -80,5 +102,34 @@ export class Aggregate {
       const newRoles = entityRoles.filter((role) => roles.indexOf(role) < 0);
       this.aggregateRoles.set(entityId, newRoles);
     }
+  }
+
+  /**
+   * Increate Event total by 1
+   * Update event counter with event ordinal property if any
+   *
+   * @param event
+   * @returns number
+   */
+  applyEvent(eventId: string): Aggregate {
+    // if eventId has not been applied.
+    if (!this.eventApplied(eventId)) {
+      this.eventsCounter = this.eventsApplied.push(eventId);
+    }
+
+    return this;
+  }
+
+  eventApplied(eventId): boolean {
+    return this.eventsApplied.indexOf(eventId) > -1;
+  }
+
+  /**
+   * Use eventCount if its great than 0 or use eventsTotal
+   *
+   * @returns number
+   */
+  getNextEventOrdinal(): number {
+    return this.eventsCounter + 1;
   }
 }

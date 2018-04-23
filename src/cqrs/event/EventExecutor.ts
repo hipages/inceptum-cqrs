@@ -24,6 +24,24 @@ export abstract class EventExecutor<E, A extends Aggregate> {
 
   abstract canExecute(event: any): boolean;
   abstract apply(event: E, aggregate: A);
+  abstract getEventId(event: E);
+  protected abstract setEventOrdinal(event: E, ordinal: number);
+
+  updateEventOrdinal(event: E, aggregate: Aggregate) {
+    // if event has not been set ordinal.
+    if (!this.getEventOrdinal(event)) {
+      this.setEventOrdinal(event, aggregate.getNextEventOrdinal());
+    }
+  }
+
+  /**
+   * Event ordinal is used by optimistic locking.
+   * By default return 0 if events do not have oridnal property.
+   * @param event
+   */
+  protected getEventOrdinal(event: E) {
+    return 0;
+  }
 
   isAggregateCreating(): boolean {
     return this.aggregateCreating;

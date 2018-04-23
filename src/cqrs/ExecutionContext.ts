@@ -17,6 +17,29 @@ export enum Status {
 }
 
 export class ExecutionContext extends AggregateEventStore {
+  public static applyEvents(allEvents: Object[], eventExecutors: EventExecutor<any, any>[], aggregateClasses: Map<string, Function>) {
+    const firstEvent = allEvents[0];
+    const firstEventExecutor = EventExecutor.getEventExecutor(firstEvent, eventExecutors);
+    if (!firstEventExecutor) {
+      throw new Error(`Unknown event during getAggregate: ${firstEvent.constructor.name}`);
+    }
+    if (!firstEventExecutor || !firstEventExecutor.isAggregateCreating()) {
+      throw new Error(`The first event of aggregate ${firstEventExecutor.getAggregateId(firstEvent)} is not an AggregateCreatingEvent. Panic!`);
+    }
+    const aggregate = Aggregate.instantiateAggregate(firstEventExecutor.getAggregateType(), firstEventExecutor.getAggregateId(firstEvent), aggregateClasses);
+    allEvents.forEach((e) => {
+      const eventExecutor = EventExecutor.getEventExecutor(e, eventExecutors);
+      if (eventExecutor) {
+        eventExecutor.apply(e, aggregate);
+        const eventId = eventExecutor.getEventId(e);
+        aggregate.applyEvent(eventId);
+      } else {
+        throw new Error(`Unknown event during getAggregate: ${firstEvent.constructor.name}`);
+      }
+    });
+    return aggregate;
+  }
+
   eventExecutors: EventExecutor<any, any>[];
   commandExecutors: CommandExecutor<any, any>[];
   commandResults: Map<string, CommandResult>;
@@ -89,7 +112,17 @@ export class ExecutionContext extends AggregateEventStore {
     if (allEvents.length === 0) {
       return null;
     }
-    return Aggregate.applyEvents(allEvents, this.eventExecutors, this.aggregateClasses);
+    return ExecutionContext.applyEvents(allEvents, this.eventExecutors, this.aggregateClasses);
+  }
+
+  async applyUncommitedEvents(aggregate: Aggregate) {
+    const uncommittedEvents = this.getUncommittedEventsOf(aggregate.aggregateId) || [];
+    uncommittedEvents.forEach((e) => {
+      const eventExecutor = EventExecutor.getEventExecutor(e, this.eventExecutors);
+      eventExecutor.updateEventOrdinal(e, aggregate);
+      Aggregate.applyEventOnAggregate(e, eventExecutor, aggregate);
+    });
+    return aggregate;
   }
 
   /**
@@ -100,7 +133,6 @@ export class ExecutionContext extends AggregateEventStore {
   getUncommittedEventsOf(aggregateId) {
     return this.eventsToEmit.filter((e) => EventExecutor.getEventExecutor(e, this.eventExecutors).getAggregateId(e) === aggregateId);
   }
-
 
   /**
    * Executes a single command. This is a convenience method that calls both {@link addCommandToExecute} and
@@ -144,9 +176,14 @@ export class ExecutionContext extends AggregateEventStore {
         }
         throw this.error;
       }
+
+      // apply events to aggregate
+      this.applyUncommitedEvents(aggregate);
     }
+
     // All commands executed correctly
     this.status = Status.COMMITTED;
+
     try {
       await this.aggregateEventStore.commitAllEvents(this.eventsToEmit);
     } catch (e) {
