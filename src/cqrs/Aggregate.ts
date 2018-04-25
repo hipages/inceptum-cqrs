@@ -20,13 +20,9 @@ export class Aggregate {
 
   public static applyEventOnAggregate(e: Object, eventExecutor: EventExecutor<any, any>, aggregate: Aggregate) {
     if (eventExecutor) {
-      if (aggregate.eventApplied(eventExecutor.getEventId(e))) {
-        return;
-      }
-
+      aggregate.applyEventOrdinal(eventExecutor, e);
+      // applying event data to aggregate data.
       eventExecutor.apply(e, aggregate);
-      const eventId = eventExecutor.getEventId(e);
-      aggregate.applyEvent(eventId);
     } else {
       throw new Error(`Unknown event during getEventExecutor: ${e.constructor.name}`);
     }
@@ -41,15 +37,16 @@ export class Aggregate {
 
   aggregateId: string;
   aggregateType: string;
-  private eventsCounter: number; // number of events in aggregate
-  private eventsApplied: string[];
+  /**
+   * Allow optimistic locking to support aggregate snapshot.
+   */
+  private maxEventOrdinal: number; // number of events in aggregate
 
   constructor(aggregateType: string, aggregateId: string) {
     this.aggregateType = aggregateType;
     this.aggregateId = aggregateId;
     this.aggregateRoles = new Map();
-    this.eventsCounter = 0;
-    this.eventsApplied = [];
+    this.maxEventOrdinal = 0;
   }
 
   getAggregateType() {
@@ -105,27 +102,43 @@ export class Aggregate {
   }
 
   /**
-   * Increate events counter by 1
+   * Apply event ordinal to aggregate max event ordinal.
+   * Repair event ordinal if it is 0.
    *
    * @param event
    * @returns number
    */
-  applyEvent(eventId: string): Aggregate {
-    // if eventId has not been applied.
-    if (!this.eventApplied(eventId)) {
-      this.eventsCounter = this.eventsApplied.push(eventId);
+  applyEventOrdinal(eventExecutor: EventExecutor<any, any>, event: any): Aggregate {
+    // read repair event ordinal if ordinal is 0.
+    eventExecutor.updateEventOrdinal(event, this);
+
+    // if event has not applied ordinal.
+    if (this.eventApplied(eventExecutor, event)) {
+      const eventUuid = eventExecutor.getEventId(event);
+      const aggregateId = this.getAggregateId();
+      const msg = `event (${eventUuid}) has already been applied to aggregate (${aggregateId}). Its current maxOrdinal is ${this.maxEventOrdinal}`;
+      throw new Error(msg);
     }
 
+    const eventOrdinal: number = eventExecutor.getEventOrdinal(event);
+    if ((eventOrdinal - this.maxEventOrdinal) !== 1) {
+      const eventId = eventExecutor.getEventId(event);
+      const aggregateId = this.getAggregateId();
+      throw new Error(`Appying non consecutive event(${eventId})(ordinal: ${eventOrdinal}) to the aggregate(${aggregateId})(maxOrdinal: ${this.maxEventOrdinal})`);
+    }
+
+    this.maxEventOrdinal = eventOrdinal;
     return this;
   }
 
   /**
-   *
-   * @param eventId
+   * Use event ordinal to check if an event has been applied to the aggregate.
+   * @param eventOrdinal
    * @returns boolean
    */
-  eventApplied(eventId): boolean {
-    return this.eventsApplied.indexOf(eventId) > -1;
+  eventApplied(eventExecutor: EventExecutor<any, any>, event: any): boolean {
+    const ec = eventExecutor.getEventOrdinal(event);
+    return ec > 0 && !(this.maxEventOrdinal < ec);
   }
 
   /**
@@ -134,6 +147,10 @@ export class Aggregate {
    * @returns number
    */
   getNextEventOrdinal(): number {
-    return this.eventsCounter + 1;
+    return this.getMaxEventOrdinal() + 1;
+  }
+
+  getMaxEventOrdinal(): number {
+    return this.maxEventOrdinal;
   }
 }

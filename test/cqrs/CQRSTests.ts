@@ -104,7 +104,7 @@ suite('cqrs', () => {
       }
     });
 
-    test('Events counter after applying multiple events', async () => {
+    test('Test next event oridnal after applying multiple events', async () => {
       const aggregateId = UUID.v4();
       const executionContext = cqrs.newExecutionContext();
       executionContext.addCommandToExecute(cqrs.deserialiseCommand({

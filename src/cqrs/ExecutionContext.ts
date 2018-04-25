@@ -92,12 +92,13 @@ export class ExecutionContext extends AggregateEventStore {
     return Aggregate.applyEvents(allEvents, this.eventExecutors, this.aggregateClasses);
   }
 
-  protected async applyUncommitedEvents(aggregate: Aggregate) {
+  protected applyUncommitedEvents(aggregate: Aggregate) {
     const uncommittedEvents = this.getUncommittedEventsOf(aggregate.aggregateId) || [];
     uncommittedEvents.forEach((e) => {
       const eventExecutor = EventExecutor.getEventExecutor(e, this.eventExecutors);
-      eventExecutor.updateEventOrdinal(e, aggregate);
-      Aggregate.applyEventOnAggregate(e, eventExecutor, aggregate);
+      if (!aggregate.eventApplied(eventExecutor, e)) {
+        Aggregate.applyEventOnAggregate(e, eventExecutor, aggregate);
+      }
     });
     return aggregate;
   }

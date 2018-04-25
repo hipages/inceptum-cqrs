@@ -19,9 +19,8 @@ export class TodoAggregate extends Aggregate {
 
 
 export class TodoCreatedEvent {
-  eventId: string;
   constructor(public title: string, public creator: string, public description: string, public aggregateId: string) {
-    this.eventId = v1();
+
   }
 }
 
@@ -36,11 +35,11 @@ export class TodoCreatedEventExecutor extends EventExecutor<TodoCreatedEvent, To
   }
 
   setEventOrdinal(e, n) {
-    return;
+    e.ordinal = n;
   }
 
   getEventOrdinal(e) {
-    return 0;
+    return e.ordinal;
   }
 
   public canExecute(event: any): boolean {
@@ -71,16 +70,16 @@ export class TodoMarkedDoneEventExecutor extends EventExecutor<TodoMarkedDoneEve
     return event instanceof TodoMarkedDoneEvent;
   }
 
-  getEventId(e) {
+  getEventId(e): string {
     return e.eventId;
   }
 
   setEventOrdinal(e, n) {
-    return;
+    e.ordinal = n;
   }
 
   getEventOrdinal(e) {
-    return 0;
+    return e.ordinal;
   }
 
   public apply(event: TodoMarkedDoneEvent, aggregate: TodoAggregate) {

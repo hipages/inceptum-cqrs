@@ -1,6 +1,9 @@
 import { suite, test, slow, timeout } from 'mocha-typescript';
 import { must } from 'must';
+import { v1 } from 'uuid';
+import { ExtendedError } from 'inceptum';
 import { Aggregate } from '../../src/cqrs/Aggregate';
+import { TodoCreatedEventExecutor, TodoCreatedEvent } from './TodoExample';
 
 suite('cqrs/Aggregate', () => {
   suite('Aggregate roles', () => {
@@ -41,8 +44,8 @@ suite('cqrs/Aggregate', () => {
     });
   });
 
-  suite('Aggregate event counter', () => {
-    test('aggregate events counter prevent applying duplicate event ids.', () => {
+  suite('Aggregate event ordinal', () => {
+    test('aggregate max ordinal prevent applying duplicate and non consecutive events.', () => {
       const aggregateType = 'voucher';
       const aggregateId = '1-aggregate-u-u-i-d';
       const one = new Aggregate(aggregateType, aggregateId);
@@ -50,18 +53,58 @@ suite('cqrs/Aggregate', () => {
       const eventId = 'test-event-1';
       const newEventId = 'new-test-event-1';
 
-      one.applyEvent(eventId).must.be.instanceof(Aggregate);
+      const createEventExecutor = new TodoCreatedEventExecutor();
+      const todoCreatedEvent = new TodoCreatedEvent('title', 'test', 'description', v1());
+      const newTodoCreatedEvent = new TodoCreatedEvent('new title', 'new test', 'new description', v1());
+      const nonConsecutiveTodoCreatedEvent = new TodoCreatedEvent('new title', 'new test', 'new description', v1());
+
+      // apply the first event ordinal.
+      one.applyEventOrdinal(createEventExecutor, todoCreatedEvent).must.be.instanceof(Aggregate);
+      one.getMaxEventOrdinal().must.be.equal(1);
       one.getNextEventOrdinal().must.be.equal(2);
 
-      one.eventApplied(eventId).must.be.true();
-      one.eventApplied(newEventId).must.be.false();
+      createEventExecutor.getEventOrdinal(todoCreatedEvent).must.be.equal(1);
 
-      // apply same event id, event counter should not changed.
-      one.applyEvent(eventId);
+      // apply same event, max event ordinal should not changed.
+      try {
+        one.applyEventOrdinal(createEventExecutor, todoCreatedEvent);
+      } catch (err) {
+        err.must.be.instanceof(Error);
+      }
+
+      one.getMaxEventOrdinal().must.be.equal(1);
       one.getNextEventOrdinal().must.be.equal(2);
 
-      one.applyEvent(newEventId);
+      one.applyEventOrdinal(createEventExecutor, newTodoCreatedEvent);
+      createEventExecutor.getEventOrdinal(newTodoCreatedEvent).must.be.equal(2);
+      one.getMaxEventOrdinal().must.be.equal(2);
       one.getNextEventOrdinal().must.be.equal(3);
+
+      createEventExecutor.setEventOrdinal(nonConsecutiveTodoCreatedEvent, 99);
+      try {
+        one.applyEventOrdinal(createEventExecutor, nonConsecutiveTodoCreatedEvent);
+      } catch (err) {
+        err.must.be.instanceof(Error);
+        err.message.must.include('Appying non consecutive event');
+      }
+      one.getMaxEventOrdinal().must.be.equal(2);
+      one.getNextEventOrdinal().must.be.equal(3);
+    });
+
+    test('test eventApplied', () => {
+      const aggregateType = 'voucher';
+      const aggregateId = '1-aggregate-u-u-i-d';
+      const one = new Aggregate(aggregateType, aggregateId);
+
+      const eventId = 'test-event-1';
+      const newEventId = 'new-test-event-1';
+
+      const createEventExecutor = new TodoCreatedEventExecutor();
+      const todoCreatedEvent = new TodoCreatedEvent('title', 'test', 'description', v1());
+      const newTodoCreatedEvent = new TodoCreatedEvent('new title', 'new test', 'new description', v1());
+
+      one.applyEventOrdinal(createEventExecutor, todoCreatedEvent);
+      one.eventApplied(createEventExecutor, newTodoCreatedEvent).must.be.false();
     });
   });
 });

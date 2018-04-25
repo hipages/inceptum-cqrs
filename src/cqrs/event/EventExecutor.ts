@@ -24,7 +24,7 @@ export abstract class EventExecutor<E, A extends Aggregate> {
 
   abstract canExecute(event: any): boolean;
   abstract apply(event: E, aggregate: A);
-  abstract getEventId(event: E);
+  abstract getEventId(event: E): string;
   /**
    * Depending on event definition, set ordinal in event.
    * @param event
@@ -33,11 +33,12 @@ export abstract class EventExecutor<E, A extends Aggregate> {
   protected abstract setEventOrdinal(event: E, ordinal: number);
   /**
    * Event ordinal is used by optimistic locking.
+   * Event ordinal could also be used to support snapshot.
    * By default return 0 if events do not have oridnal property.
    * @param event
    * @returns number
    */
-  protected abstract getEventOrdinal(event: E): number;
+  abstract getEventOrdinal(event: E): number;
 
   /**
    * Update event with the next event ordinal if the event has ordinal 0.
