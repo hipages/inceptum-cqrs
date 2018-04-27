@@ -3,7 +3,7 @@ import { must } from 'must';
 import { v1 } from 'uuid';
 import { ExtendedError } from 'inceptum';
 import { Aggregate } from '../../src/cqrs/Aggregate';
-import { TodoCreatedEventExecutor, TodoCreatedEvent } from './TodoExample';
+import { TodoCreatedEventExecutor, TodoCreatedEvent, TodoAggregate } from './TodoExample';
 
 suite('cqrs/Aggregate', () => {
   suite('Aggregate roles', () => {
@@ -45,10 +45,10 @@ suite('cqrs/Aggregate', () => {
   });
 
   suite('Aggregate event ordinal', () => {
-    test('aggregate max ordinal prevent applying duplicate and non consecutive events.', () => {
+    test('checkEventCanBeApplied allows event with no ordinal on aggregate', () => {
       const aggregateType = 'voucher';
       const aggregateId = '1-aggregate-u-u-i-d';
-      const one = new Aggregate(aggregateType, aggregateId);
+      const one = new TodoAggregate(aggregateType, aggregateId);
 
       const eventId = 'test-event-1';
       const newEventId = 'new-test-event-1';
@@ -59,42 +59,13 @@ suite('cqrs/Aggregate', () => {
       const nonConsecutiveTodoCreatedEvent = new TodoCreatedEvent('new title', 'new test', 'new description', v1());
 
       // apply the first event ordinal.
-      one.applyEventOrdinal(createEventExecutor, todoCreatedEvent).must.be.instanceof(Aggregate);
-      one.getMaxEventOrdinal().must.be.equal(1);
-      one.getNextEventOrdinal().must.be.equal(2);
-
-      createEventExecutor.getEventOrdinal(todoCreatedEvent).must.be.equal(1);
-
-      // apply same event, max event ordinal should not changed.
-      try {
-        one.applyEventOrdinal(createEventExecutor, todoCreatedEvent);
-      } catch (err) {
-        err.must.be.instanceof(Error);
-      }
-
-      one.getMaxEventOrdinal().must.be.equal(1);
-      one.getNextEventOrdinal().must.be.equal(2);
-
-      one.applyEventOrdinal(createEventExecutor, newTodoCreatedEvent);
-      createEventExecutor.getEventOrdinal(newTodoCreatedEvent).must.be.equal(2);
-      one.getMaxEventOrdinal().must.be.equal(2);
-      one.getNextEventOrdinal().must.be.equal(3);
-
-      createEventExecutor.setEventOrdinal(nonConsecutiveTodoCreatedEvent, 99);
-      try {
-        one.applyEventOrdinal(createEventExecutor, nonConsecutiveTodoCreatedEvent);
-      } catch (err) {
-        err.must.be.instanceof(Error);
-        err.message.must.include('Appying non consecutive event');
-      }
-      one.getMaxEventOrdinal().must.be.equal(2);
-      one.getNextEventOrdinal().must.be.equal(3);
+      one.checkEventCanBeApplied(todoCreatedEvent, todoCreatedEvent.ordinal, todoCreatedEvent.eventId);
+      one.getMaxEventOrdinal().must.be.equal(0);
     });
-
-    test('test eventApplied', () => {
+    test('checkEventCanBeApplied throws error on a repeated ordinal', () => {
       const aggregateType = 'voucher';
       const aggregateId = '1-aggregate-u-u-i-d';
-      const one = new Aggregate(aggregateType, aggregateId);
+      const one = new TodoAggregate(aggregateType, aggregateId);
 
       const eventId = 'test-event-1';
       const newEventId = 'new-test-event-1';
@@ -102,9 +73,43 @@ suite('cqrs/Aggregate', () => {
       const createEventExecutor = new TodoCreatedEventExecutor();
       const todoCreatedEvent = new TodoCreatedEvent('title', 'test', 'description', v1());
       const newTodoCreatedEvent = new TodoCreatedEvent('new title', 'new test', 'new description', v1());
+      const nonConsecutiveTodoCreatedEvent = new TodoCreatedEvent('new title', 'new test', 'new description', v1());
 
-      one.applyEventOrdinal(createEventExecutor, todoCreatedEvent);
-      one.eventApplied(createEventExecutor, newTodoCreatedEvent).must.be.false();
+      createEventExecutor.apply(todoCreatedEvent, one);
+      one.getNextEventOrdinal().must.be.equal(1);
+
+      // apply same event, max event ordinal should not changed.
+      try {
+        one.checkEventCanBeApplied(todoCreatedEvent, 1, todoCreatedEvent.eventId);
+        true.must.be.false();
+      } catch (err) {
+        err.must.be.an.error();
+      }
+    });
+
+    test('checkEventCanBeApplied throws error on a skipped ordinal', () => {
+      const aggregateType = 'voucher';
+      const aggregateId = '1-aggregate-u-u-i-d';
+      const one = new TodoAggregate(aggregateType, aggregateId);
+
+      const eventId = 'test-event-1';
+      const newEventId = 'new-test-event-1';
+
+      const createEventExecutor = new TodoCreatedEventExecutor();
+      const todoCreatedEvent = new TodoCreatedEvent('title', 'test', 'description', v1());
+      const newTodoCreatedEvent = new TodoCreatedEvent('new title', 'new test', 'new description', v1());
+      const nonConsecutiveTodoCreatedEvent = new TodoCreatedEvent('new title', 'new test', 'new description', v1());
+
+      createEventExecutor.apply(todoCreatedEvent, one);
+      one.getNextEventOrdinal().must.be.equal(1);
+
+      // apply same event, max event ordinal should not changed.
+      try {
+        one.checkEventCanBeApplied(todoCreatedEvent, 3, todoCreatedEvent.eventId);
+        true.must.be.false();
+      } catch (err) {
+        err.must.be.an.error();
+      }
     });
   });
 });

@@ -17,10 +17,18 @@ export class TodoAggregate extends Aggregate {
   status: string;
 }
 
+export class TodoEvent {
+  eventId: string;
+  ordinal: number;
 
-export class TodoCreatedEvent {
+  constructor() {
+    this.eventId = v1();
+  }
+}
+
+export class TodoCreatedEvent extends TodoEvent {
   constructor(public title: string, public creator: string, public description: string, public aggregateId: string) {
-
+    super();
   }
 }
 
@@ -30,15 +38,15 @@ export class TodoCreatedEventExecutor extends EventExecutor<TodoCreatedEvent, To
     super(true, 'aggregateId', 'Todo');
   }
 
-  getEventId(e) {
+  getEventId(e: TodoCreatedEvent) {
     return e.eventId;
   }
 
-  setEventOrdinal(e, n) {
+  setEventOrdinal(e: TodoCreatedEvent, n: number) {
     e.ordinal = n;
   }
 
-  getEventOrdinal(e) {
+  getEventOrdinal(e: TodoCreatedEvent) {
     return e.ordinal;
   }
 
@@ -54,10 +62,9 @@ export class TodoCreatedEventExecutor extends EventExecutor<TodoCreatedEvent, To
   }
 }
 
-export class TodoMarkedDoneEvent {
-  eventId: string;
+export class TodoMarkedDoneEvent extends TodoEvent {
   constructor(public aggregateId: string) {
-    this.eventId = v1();
+    super();
   }
 }
 
@@ -70,15 +77,15 @@ export class TodoMarkedDoneEventExecutor extends EventExecutor<TodoMarkedDoneEve
     return event instanceof TodoMarkedDoneEvent;
   }
 
-  getEventId(e): string {
+  getEventId(e: TodoMarkedDoneEvent): string {
     return e.eventId;
   }
 
-  setEventOrdinal(e, n) {
+  setEventOrdinal(e: TodoMarkedDoneEvent, n: number) {
     e.ordinal = n;
   }
 
-  getEventOrdinal(e) {
+  getEventOrdinal(e: TodoMarkedDoneEvent) {
     return e.ordinal;
   }
 

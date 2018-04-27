@@ -17,6 +17,7 @@ export enum Status {
 }
 
 export class ExecutionContext extends AggregateEventStore {
+  currentExecutingAggregate: Aggregate = null;
   eventExecutors: EventExecutor<any, any>[];
   commandExecutors: CommandExecutor<any, any>[];
   commandResults: Map<string, CommandResult>;
@@ -51,6 +52,16 @@ export class ExecutionContext extends AggregateEventStore {
    */
   async commitEvent(event: any): Promise<void> {
     this.validateNotCommitted();
+    if (this.currentExecutingAggregate === null) {
+      throw new Error(`Emiting an event outside of a command executor execution. Have you forgotten an await?`);
+    }
+    const eventExecutor = EventExecutor.getEventExecutor(event, this.eventExecutors);
+    if (eventExecutor) {
+      const eventAggregateId = eventExecutor.getAggregateId(event);
+      if (eventAggregateId !== this.currentExecutingAggregate.getAggregateId()) {
+        throw new Error(`You can't emit an event on an aggregate that is not the subject of this command. Event is for aggregate ${eventAggregateId}, and command is on aggregate ${this.currentExecutingAggregate.getAggregateId()}. Have you awaited properly?`);
+      }
+    }
     this.eventsToEmit.push(event);
   }
   /**
@@ -92,15 +103,18 @@ export class ExecutionContext extends AggregateEventStore {
     return Aggregate.applyEvents(allEvents, this.eventExecutors, this.aggregateClasses);
   }
 
-  protected applyUncommitedEvents(aggregate: Aggregate) {
+  protected setUncommitedEventsOrdinals(aggregate: Aggregate) {
     const uncommittedEvents = this.getUncommittedEventsOf(aggregate.aggregateId) || [];
-    uncommittedEvents.forEach((e) => {
+    const baseOrdinal = aggregate.getNextEventOrdinal();
+    uncommittedEvents.filter((e) => {
       const eventExecutor = EventExecutor.getEventExecutor(e, this.eventExecutors);
-      if (!aggregate.eventApplied(eventExecutor, e)) {
-        Aggregate.applyEventOnAggregate(e, eventExecutor, aggregate);
+      return !eventExecutor.getEventOrdinal(e);
+    }).forEach((e, idx) => {
+      const eventExecutor = EventExecutor.getEventExecutor(e, this.eventExecutors);
+      if (!eventExecutor.getEventOrdinal(e)) {
+        eventExecutor.updateEventOrdinal(e, baseOrdinal + idx);
       }
     });
-    return aggregate;
   }
 
   /**
@@ -142,7 +156,11 @@ export class ExecutionContext extends AggregateEventStore {
         Aggregate.instantiateAggregate(command.getAggregateType(), command.getAggregateId(), this.aggregateClasses) :
         await this.getAggregate(command.getAggregateId());
       try {
+        this.currentExecutingAggregate = aggregate;
         await commandExecutor.execute(command, this, aggregate);
+        this.currentExecutingAggregate = null;
+        // apply events to aggregate
+        this.setUncommitedEventsOrdinals(aggregate);
       } catch (e) {
         this.status = Status.COMMITTED;
         if (e instanceof ReturnToCallerError) {
@@ -154,9 +172,6 @@ export class ExecutionContext extends AggregateEventStore {
         }
         throw this.error;
       }
-
-      // apply events to aggregate
-      this.applyUncommitedEvents(aggregate);
     }
 
     // All commands executed correctly

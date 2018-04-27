@@ -45,10 +45,10 @@ export abstract class EventExecutor<E, A extends Aggregate> {
    * @param event
    * @param aggregate
    */
-  updateEventOrdinal(event: E, aggregate: Aggregate) {
+  updateEventOrdinal(event: E, ordinal: number) {
     // if event has not been set ordinal.
     if (!this.getEventOrdinal(event)) {
-      this.setEventOrdinal(event, aggregate.getNextEventOrdinal());
+      this.setEventOrdinal(event, ordinal);
     }
   }
 
