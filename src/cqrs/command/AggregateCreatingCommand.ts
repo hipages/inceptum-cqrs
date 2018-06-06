@@ -1,3 +1,4 @@
+import { v1 } from 'uuid';
 import { Command } from './Command';
 import { AggregateCommand, AggregateCommandOptions } from './AggregateCommand';
 
@@ -17,6 +18,9 @@ export abstract class AggregateCreatingCommand extends AggregateCommand {
   constructor(obj: AggregateCreatingCommandOptions = {}) {
     super(obj);
     this.aggregateType = obj.aggregateType;
+    if (!this.aggregateId) {
+      this.aggregateId = v1();
+    }
   }
   getAggregateType() {
     return this.aggregateType;

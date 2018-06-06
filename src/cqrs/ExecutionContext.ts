@@ -17,6 +17,7 @@ export enum Status {
 }
 
 export class ExecutionContext extends AggregateEventStore {
+  currentExecutingAggregate: Aggregate = null;
   eventExecutors: EventExecutor<any, any>[];
   commandExecutors: CommandExecutor<any, any>[];
   commandResults: Map<string, CommandResult>;
@@ -51,6 +52,16 @@ export class ExecutionContext extends AggregateEventStore {
    */
   async commitEvent(event: any): Promise<void> {
     this.validateNotCommitted();
+    if (this.currentExecutingAggregate === null) {
+      throw new Error(`Emiting an event outside of a command executor execution. Have you forgotten an await?`);
+    }
+    const eventExecutor = EventExecutor.getEventExecutor(event, this.eventExecutors);
+    if (eventExecutor) {
+      const eventAggregateId = eventExecutor.getAggregateId(event);
+      if (eventAggregateId !== this.currentExecutingAggregate.getAggregateId()) {
+        throw new Error(`You can't emit an event on an aggregate that is not the subject of this command. Event is for aggregate ${eventAggregateId}, and command is on aggregate ${this.currentExecutingAggregate.getAggregateId()}. Have you awaited properly?`);
+      }
+    }
     this.eventsToEmit.push(event);
   }
   /**
@@ -101,7 +112,6 @@ export class ExecutionContext extends AggregateEventStore {
     return this.eventsToEmit.filter((e) => EventExecutor.getEventExecutor(e, this.eventExecutors).getAggregateId(e) === aggregateId);
   }
 
-
   /**
    * Executes a single command. This is a convenience method that calls both {@link addCommandToExecute} and
    * {@link commit}
@@ -128,11 +138,18 @@ export class ExecutionContext extends AggregateEventStore {
     while (this.commandsToExecute.length > 0) {
       const command = this.commandsToExecute.shift();
       const commandExecutor = this.commandExecutors.find((executor) => executor.canExecute(command));
+      if ((command instanceof AggregateCreatingCommand) && (!command.getAggregateId())) {
+        throw new Error(`Aggregate Creating Command ${command.constructor.name} is not defining the Aggregate Id. AggregateCreatingCommands should`);
+      }
       const aggregate = (command instanceof AggregateCreatingCommand) ?
         Aggregate.instantiateAggregate(command.getAggregateType(), command.getAggregateId(), this.aggregateClasses) :
         await this.getAggregate(command.getAggregateId());
       try {
+        this.currentExecutingAggregate = aggregate;
         await commandExecutor.execute(command, this, aggregate);
+        if (command instanceof AggregateCreatingCommand) {
+          this.getCommandResultForCommand(command).setNewAggregate(command.getAggregateType(), command.getAggregateId());
+        }
       } catch (e) {
         this.status = Status.COMMITTED;
         if (e instanceof ReturnToCallerError) {
@@ -145,8 +162,10 @@ export class ExecutionContext extends AggregateEventStore {
         throw this.error;
       }
     }
+
     // All commands executed correctly
     this.status = Status.COMMITTED;
+
     try {
       await this.aggregateEventStore.commitAllEvents(this.eventsToEmit);
     } catch (e) {
