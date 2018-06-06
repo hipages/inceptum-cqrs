@@ -152,15 +152,22 @@ export class ExecutionContext extends AggregateEventStore {
     while (this.commandsToExecute.length > 0) {
       const command = this.commandsToExecute.shift();
       const commandExecutor = this.commandExecutors.find((executor) => executor.canExecute(command));
+      if ((command instanceof AggregateCreatingCommand) && (!command.getAggregateId())) {
+        throw new Error(`Aggregate Creating Command ${command.constructor.name} is not defining the Aggregate Id. AggregateCreatingCommands should`);
+      }
       const aggregate = (command instanceof AggregateCreatingCommand) ?
         Aggregate.instantiateAggregate(command.getAggregateType(), command.getAggregateId(), this.aggregateClasses) :
         await this.getAggregate(command.getAggregateId());
       try {
         this.currentExecutingAggregate = aggregate;
         await commandExecutor.execute(command, this, aggregate);
+        if (command instanceof AggregateCreatingCommand) {
+          this.getCommandResultForCommand(command).setNewAggregate(command.getAggregateType(), command.getAggregateId());
+        }
         this.currentExecutingAggregate = null;
         // apply events to aggregate
         this.setUncommitedEventsOrdinals(aggregate);
+
       } catch (e) {
         this.status = Status.COMMITTED;
         if (e instanceof ReturnToCallerError) {
