@@ -1,3 +1,4 @@
+import { v1 } from 'uuid';
 import { EventExecutor } from '../../src/cqrs/event/EventExecutor';
 import { ExecutionContext } from '../../src/cqrs/ExecutionContext';
 import { Aggregate } from '../../src/cqrs/Aggregate';
@@ -16,9 +17,18 @@ export class TodoAggregate extends Aggregate {
   status: string;
 }
 
+export class TodoEvent {
+  eventId: string;
+  ordinal: number;
 
-export class TodoCreatedEvent {
+  constructor() {
+    this.eventId = v1();
+  }
+}
+
+export class TodoCreatedEvent extends TodoEvent {
   constructor(public title: string, public creator: string, public description: string, public aggregateId: string) {
+    super();
   }
 }
 
@@ -26,6 +36,18 @@ export class TodoCreatedEvent {
 export class TodoCreatedEventExecutor extends EventExecutor<TodoCreatedEvent, TodoAggregate> {
   constructor() {
     super(true, 'aggregateId', 'Todo');
+  }
+
+  getEventId(e: TodoCreatedEvent) {
+    return e.eventId;
+  }
+
+  setEventOrdinal(e: TodoCreatedEvent, n: number) {
+    e.ordinal = n;
+  }
+
+  getEventOrdinal(e: TodoCreatedEvent) {
+    return e.ordinal;
   }
 
   public canExecute(event: any): boolean {
@@ -40,8 +62,9 @@ export class TodoCreatedEventExecutor extends EventExecutor<TodoCreatedEvent, To
   }
 }
 
-export class TodoMarkedDoneEvent {
+export class TodoMarkedDoneEvent extends TodoEvent {
   constructor(public aggregateId: string) {
+    super();
   }
 }
 
@@ -52,6 +75,18 @@ export class TodoMarkedDoneEventExecutor extends EventExecutor<TodoMarkedDoneEve
   }
   public canExecute(event: any): boolean {
     return event instanceof TodoMarkedDoneEvent;
+  }
+
+  getEventId(e: TodoMarkedDoneEvent): string {
+    return e.eventId;
+  }
+
+  setEventOrdinal(e: TodoMarkedDoneEvent, n: number) {
+    e.ordinal = n;
+  }
+
+  getEventOrdinal(e: TodoMarkedDoneEvent) {
+    return e.ordinal;
   }
 
   public apply(event: TodoMarkedDoneEvent, aggregate: TodoAggregate) {

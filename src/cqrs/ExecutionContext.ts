@@ -103,6 +103,20 @@ export class ExecutionContext extends AggregateEventStore {
     return Aggregate.applyEvents(allEvents, this.eventExecutors, this.aggregateClasses);
   }
 
+  protected setUncommitedEventsOrdinals(aggregate: Aggregate) {
+    const uncommittedEvents = this.getUncommittedEventsOf(aggregate.aggregateId) || [];
+    const baseOrdinal = aggregate.getNextEventOrdinal();
+    uncommittedEvents.filter((e) => {
+      const eventExecutor = EventExecutor.getEventExecutor(e, this.eventExecutors);
+      return !eventExecutor.getEventOrdinal(e);
+    }).forEach((e, idx) => {
+      const eventExecutor = EventExecutor.getEventExecutor(e, this.eventExecutors);
+      if (!eventExecutor.getEventOrdinal(e)) {
+        eventExecutor.updateEventOrdinal(e, baseOrdinal + idx);
+      }
+    });
+  }
+
   /**
    * Get all uncommitted events for the given aggregate id
    * @private
@@ -150,6 +164,10 @@ export class ExecutionContext extends AggregateEventStore {
         if (command instanceof AggregateCreatingCommand) {
           this.getCommandResultForCommand(command).setNewAggregate(command.getAggregateType(), command.getAggregateId());
         }
+        this.currentExecutingAggregate = null;
+        // apply events to aggregate
+        this.setUncommitedEventsOrdinals(aggregate);
+
       } catch (e) {
         this.status = Status.COMMITTED;
         if (e instanceof ReturnToCallerError) {
