@@ -103,5 +103,21 @@ suite('cqrs', () => {
         e.cause().must.be.an.error('Only the creator of the Todo can mark it as done');
       }
     });
+
+    test('Test next event oridnal after applying multiple events', async () => {
+      const aggregateId = UUID.v4();
+      const executionContext = cqrs.newExecutionContext();
+      executionContext.addCommandToExecute(cqrs.deserialiseCommand({
+        aggregateId,
+        title: 'Test title',
+        issuerAuth,
+        description: 'Test description',
+      }, 'CreateTodoCommand'));
+      executionContext.addCommandToExecute(cqrs.deserialiseCommand({ aggregateId, issuerAuth }, 'MarkTodoDoneCommand'));
+
+      await executionContext.commit();
+      const aggregate = await executionContext.getAggregate(aggregateId);
+      aggregate.getNextEventOrdinal().must.be.equal(3);
+    });
   });
 });
