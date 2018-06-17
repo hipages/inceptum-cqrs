@@ -14,6 +14,7 @@ interface MysqlAggregateEventData {
   eventCommittedTime: string,
   eventType: string,
   eventContent: string,
+  ordinal: number,
 }
 
 export abstract class AbstractMysqlAggregateEventStore extends AggregateEventStore {
@@ -45,9 +46,9 @@ export abstract class AbstractMysqlAggregateEventStore extends AggregateEventSto
     try {
       await this.mysqlClient.executeSql(false, sql, ...data);
     } catch (e) {
-      if (this.isLockingViolation(e)) {
+      if (this.isLockViolation(e)) {
         // throw locking violation
-        this.throwLockingViolation(e);
+        this.throwLockViolation(e);
       }
       throw e;
     }
@@ -67,9 +68,9 @@ export abstract class AbstractMysqlAggregateEventStore extends AggregateEventSto
     try {
       await this.mysqlClient.executeSql(false, sql, data);
     } catch (e) {
-      if (this.isLockingViolation(e)) {
+      if (this.isLockViolation(e)) {
         // throw locking violation
-        this.throwLockingViolation(e);
+        this.throwLockViolation(e);
       }
       throw e;
     }
@@ -79,11 +80,11 @@ export abstract class AbstractMysqlAggregateEventStore extends AggregateEventSto
   protected abstract aggregateEventToData(aggregateEvent: any): Array<any>;
   protected abstract dataToAggregateEvent(eventData: string): Array<any>;
 
-  protected isLockingViolation(e: Error) {
+  protected isLockViolation(e: Error): boolean {
     return /^(ER_DUP_ENTRY).*(ordinal)/.test(e.message);
   }
 
-  protected throwLockingViolation(cause: Error) {
+  protected throwLockViolation(cause: Error) {
     throw new LockViolationError('State has been changed since the resource was first accessed by the transaction.', cause);
   }
 }
