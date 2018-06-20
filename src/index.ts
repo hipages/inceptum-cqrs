@@ -10,6 +10,7 @@ export { CQRS, EventListener } from './cqrs/CQRS';
 export { CQRSPlugin } from './cqrs/plugin/CQRSPlugin';
 export { SwaggerCQRSMiddleware } from './cqrs/plugin/SwaggerCQRSMiddleware';
 export { AggregateEventStore } from './cqrs/event/store/AggregateEventStore';
+export { AbstractMysqlAggregateEventStore } from './cqrs/event/store/AbstractMysqlAggregateEventStore';
 export { InMemoryAggregateEventStore } from './cqrs/event/store/InMemoryAggregateEventStore';
 export { ExecutionContext } from './cqrs/ExecutionContext';
 export { CommandExecutor } from './cqrs/command/CommandExecutor';
