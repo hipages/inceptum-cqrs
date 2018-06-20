@@ -44,7 +44,6 @@ export abstract class AbstractMysqlAggregateEventStore extends AggregateEventSto
       ordinal)
     VALUES ?`;
     try {
-console.log('commit event');
       await this.mysqlClient.executeSql(false, sql, [data]);
     } catch (e) {
       if (this.isLockViolation(e)) {
