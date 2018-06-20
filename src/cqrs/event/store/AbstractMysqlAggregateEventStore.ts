@@ -25,7 +25,7 @@ export abstract class AbstractMysqlAggregateEventStore extends AggregateEventSto
     const sql = `SELECT *
                     FROM aggregate_events
                     WHERE aggregate_id = ?
-                    ORDER BY event_committed_time ASC`;
+                    ORDER BY ordinal, event_committed_time ASC`;
     const rows = await this.mysqlClient.read<MysqlAggregateEventData>(sql, aggregateId);
     return rows.map((row) => {
       return this.dataToAggregateEvent(row['event_content']);
@@ -42,9 +42,10 @@ export abstract class AbstractMysqlAggregateEventStore extends AggregateEventSto
       event_type,
       event_content,
       ordinal)
-    VALUES (?,?,?,?,?,?,?,?)`;
+    VALUES ?`;
     try {
-      await this.mysqlClient.executeSql(false, sql, ...data);
+console.log('commit event');
+      await this.mysqlClient.executeSql(false, sql, [data]);
     } catch (e) {
       if (this.isLockViolation(e)) {
         // throw locking violation
