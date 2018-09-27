@@ -187,9 +187,6 @@ export class SwaggerCQRSMiddleware {
       }
     } catch (err) {
       logger.error(`Exception executing command ${commandName}: ${stringify(command)}`, err);
-      if (newrelic) {
-        newrelic.noticeError(err);
-      }
       if (err instanceof ReturnToCallerError) {
         res.status(err.httpStatusCode);
         res.send(err.getInfoToReturn());
