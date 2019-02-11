@@ -1,6 +1,11 @@
+import { AutowireConfig } from 'inceptum';
 import { EventExecutor } from './event/EventExecutor';
+import { EventExecutorNoLocking } from './event/EventExecutorNoLocking';
 
 export class Aggregate {
+  @AutowireConfig('Application.UseOptimisticLocking')
+  static useOptimisticLocking = false;
+
   public static applyEvents(allEvents: Object[], eventExecutors: EventExecutor<any, any>[], aggregateClasses: Map<string, Function>) {
     const firstEvent = allEvents[0];
     const firstEventExecutor = EventExecutor.getEventExecutor(firstEvent, eventExecutors);
@@ -20,9 +25,15 @@ export class Aggregate {
 
   public static applyEventOnAggregate(event: Object, eventExecutor: EventExecutor<any, any>, aggregate: Aggregate) {
     if (eventExecutor) {
-      aggregate.checkEventCanBeApplied(event, eventExecutor.getEventOrdinal(event), eventExecutor.getEventId(event));
+      if (Aggregate.useOptimisticLocking) {
+        aggregate.checkEventCanBeApplied(event, eventExecutor.getEventOrdinal(event), eventExecutor.getEventId(event));
+      }
       // applying event data to aggregate data.
       eventExecutor.apply(event, aggregate);
+
+      if (!Aggregate.useOptimisticLocking) {
+        return; // no locking
+      }
 
       const eventOrdinal = eventExecutor.getEventOrdinal(event);
       if (eventOrdinal) {

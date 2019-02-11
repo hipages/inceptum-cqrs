@@ -18,6 +18,7 @@ cqrs.registerCommandExecutor(new MarkTodoDoneCommandExecutor());
 cqrs.registerAggregateClass('Todo', TodoAggregate);
 cqrs.registerCommandClass('CreateTodoCommand', CreateTodoCommand);
 cqrs.registerCommandClass('MarkTodoDoneCommand', MarkTodoDoneCommand);
+cqrs.useOptimisticLocking = true;
 eventExecutors.forEach((ee) => cqrs.registerEventExecutor(ee));
 const issuerAuth = new Auth('user', 'userId1', ['registered']);
 
@@ -118,6 +119,10 @@ suite('cqrs', () => {
       await executionContext.commit();
       const aggregate = await executionContext.getAggregate(aggregateId);
       aggregate.getNextEventOrdinal().must.be.equal(3);
+    });
+
+    test('validate event executor', () => {
+      cqrs.validateEventExecutors().must.equal(true);
     });
   });
 });
