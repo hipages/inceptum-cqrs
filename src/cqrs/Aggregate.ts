@@ -4,7 +4,7 @@ import { EventExecutorNoLocking } from './event/EventExecutorNoLocking';
 
 export class Aggregate {
   @AutowireConfig('Application.UseOptimisticLocking')
-  static useOptimisticLocking = false;
+  protected useOptimisticLocking = true;
 
   public static applyEvents(allEvents: Object[], eventExecutors: EventExecutor<any, any>[], aggregateClasses: Map<string, Function>) {
     const firstEvent = allEvents[0];
@@ -25,13 +25,13 @@ export class Aggregate {
 
   public static applyEventOnAggregate(event: Object, eventExecutor: EventExecutor<any, any>, aggregate: Aggregate) {
     if (eventExecutor) {
-      if (Aggregate.useOptimisticLocking) {
+      if (aggregate.getUseOptimisticLocking()) {
         aggregate.checkEventCanBeApplied(event, eventExecutor.getEventOrdinal(event), eventExecutor.getEventId(event));
       }
       // applying event data to aggregate data.
       eventExecutor.apply(event, aggregate);
 
-      if (!Aggregate.useOptimisticLocking) {
+      if (!aggregate.getUseOptimisticLocking()) {
         return; // no locking
       }
 
@@ -166,5 +166,9 @@ export class Aggregate {
 
   private setMaxEventOrdinal(maxEventOrdinal: number) {
     this.maxEventOrdinal = maxEventOrdinal;
+  }
+
+  getUseOptimisticLocking(): boolean {
+    return this.useOptimisticLocking;
   }
 }

@@ -10,11 +10,17 @@ import { CQRSAggregate, CQRSEventExecutor, CQRSCommand, CQRSCommandExecutor } fr
 
 @CQRSAggregate
 export class TodoAggregate extends Aggregate {
+
+  protected useOptimisticLocking = true;
   static aggregateName = 'Todo';
 
   title: string;
   description: string;
   status: string;
+
+  setUseOptimisticLocking(use: boolean): void {
+    this.useOptimisticLocking = use;
+  }
 }
 
 export class TodoEvent {
