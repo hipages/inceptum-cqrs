@@ -4,7 +4,7 @@ import { EventExecutorNoLocking } from './event/EventExecutorNoLocking';
 
 export class Aggregate {
   @AutowireConfig('Application.UseOptimisticLocking')
-  protected useOptimisticLocking = true;
+  protected useOptimisticLocking;
 
   public static applyEvents(allEvents: Object[], eventExecutors: EventExecutor<any, any>[], aggregateClasses: Map<string, Function>) {
     const firstEvent = allEvents[0];

@@ -22,7 +22,7 @@ export abstract class AbstractMysqlAggregateEventStore extends AggregateEventSto
   protected mysqlClient: MySQLClient;
 
   @AutowireConfig('Application.UseOptimisticLocking')
-  protected useOptimisticLocking = true;
+  protected useOptimisticLocking: boolean;
 
   async getEventsOf(aggregateId: string): Promise<any[]> {
     const sql = this.getEventsSql();

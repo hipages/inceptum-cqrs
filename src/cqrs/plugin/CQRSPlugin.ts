@@ -37,7 +37,7 @@ export class CQRSPlugin implements Plugin {
 
   // tslint:disable-next-line:prefer-function-over-method
   async willStart(app: InceptumApp, pluginContext?: Map<String, any>): Promise<void> {
-    logger.info('Registering CQRS supportakjsflksjflks');
+    logger.info('Registering CQRS support');
     const context = app.getContext();
     try {
       const singletonDefinition = new BaseSingletonDefinition<CQRS>(CQRS);

@@ -92,7 +92,7 @@ export class CQRS {
       });
     }
     this.commandDefinitionsToRegister = null;
-    // this.validateEventExecutors();
+    this.validateEventExecutors();
   }
 
   /**
@@ -188,7 +188,7 @@ export class CQRS {
         if (this.useOptimisticLocking) {
           msg = `${e.constructor.name} should be an instance of EventExecutor instead of EventExecutorNoLocking.`;
         }
-        Logger.error(`${msg}`);
+        throw new ExtendedError(msg);
       }
     }
     return true;
