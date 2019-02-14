@@ -7,7 +7,7 @@ Inceptum CQRS
 
 ## Optimistic Locking
 
-In short, aggregate update will fail if aggregate state has been changed in data storage (aggregate events are added) since the last read of the aggregate. 
+In short, an aggregate update will fail if the aggregate state has been changed in data storage (aggregate events are added) since the last read of the aggregate. 
 
 ### To use Optimistic locking ( by default ):
 Set UseOptimisticLocking to true in config yml
@@ -15,9 +15,9 @@ Set UseOptimisticLocking to true in config yml
 Application:
   UseOptimisticLocking: true
 ``` 
-In application, each event executor needs to extend EventExecutor class
+In an application, each event executor needs to extend EventExecutor class
 
-In scenario where locking is not required meaning aggregate will be less likely to being updated concurrently by transations, optimistic locking can be turned off. 
+In the scenario where locking is not required meaning aggregate will be less likely to being updated concurrently by transations, optimistic locking can be turned off. 
 
 ### To turn off locking:
 
@@ -26,7 +26,7 @@ Set UseOptimisticLocking to false in config yml
 Application:
   UseOptimisticLocking: false
 ``` 
-In application, each event executor needs to extend EventExecutorNoLocking class
+In an application, each event executor needs to extend EventExecutorNoLocking class
 
 Test During Local Development
 --

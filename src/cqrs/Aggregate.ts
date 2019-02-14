@@ -1,6 +1,6 @@
 import { AutowireConfig } from 'inceptum';
 import { EventExecutor } from './event/EventExecutor';
-import { EventExecutorNoLocking } from './event/EventExecutorNoLocking';
+import { EventExecutorNoLock } from './event/EventExecutorNoLock';
 
 export class Aggregate {
   @AutowireConfig('Application.UseOptimisticLocking')

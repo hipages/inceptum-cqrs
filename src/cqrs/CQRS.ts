@@ -6,7 +6,7 @@ import { Aggregate } from './Aggregate';
 import { Command } from './command/Command';
 import { CommandExecutor } from './command/CommandExecutor';
 import { EventExecutor } from './event/EventExecutor';
-import { EventExecutorNoLocking } from './event/EventExecutorNoLocking';
+import { EventExecutorNoLock } from './event/EventExecutorNoLock';
 
 const MAX_AGGREGATE_CACHE_ENTRIES = 1000;
 const MAX_AGGREGATE_CACHE_AGE = 1000 * 60 * 60; // one hour
@@ -182,13 +182,13 @@ export class CQRS {
 
   validateEventExecutors(): boolean {
     for (const e of this.eventExecutors) {
-      const valid = this.useOptimisticLocking ? e instanceof EventExecutor && !(e instanceof EventExecutorNoLocking) : e instanceof EventExecutorNoLocking;
+      const valid = this.useOptimisticLocking ? e instanceof EventExecutor && !(e instanceof EventExecutorNoLock) : e instanceof EventExecutorNoLock;
       if (!valid) {
-        let msg = `${e.constructor.name} is not an instance of EventExecutorNoLocking.`;
+        let errMsg = `${e.constructor.name} is not an instance of EventExecutorNoLock.`;
         if (this.useOptimisticLocking) {
-          msg = `${e.constructor.name} should be an instance of EventExecutor instead of EventExecutorNoLocking.`;
+          errMsg = `${e.constructor.name} should be an instance of EventExecutor instead of EventExecutorNoLock.`;
         }
-        throw new ExtendedError(msg);
+        throw new ExtendedError(errMsg);
       }
     }
     return true;

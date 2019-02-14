@@ -1,12 +1,16 @@
 import { suite, test, slow, timeout } from 'mocha-typescript';
 import { must } from 'must';
 import * as UUID from 'uuid';
+import { ExtendedError } from 'inceptum';
 
 import { CQRS } from '../../src/cqrs/CQRS';
 import { Auth } from '../../src/auth/Auth';
 import { InMemoryAggregateEventStore } from '../../src/cqrs/event/store/InMemoryAggregateEventStore';
 import { Command } from '../../src/cqrs/command/Command';
-import { MarkTodoDoneCommand, CreateTodoCommand,  TodoAggregate,  CreateTodoCommandExecutor,  MarkTodoDoneCommandExecutor,  TodoCreatedEventExecutor,  TodoMarkedDoneEventExecutor } from './TodoExample';
+import { MarkTodoDoneCommand, CreateTodoCommand,  TodoAggregate,
+          CreateTodoCommandExecutor,  MarkTodoDoneCommandExecutor,
+          TodoCreatedEventExecutor,  TodoMarkedDoneEventExecutor,
+          TodoMarkedDoneNoLockingEventExecutor } from './TodoExample';
 
 
 const eventExecutors = [new TodoCreatedEventExecutor(), new TodoMarkedDoneEventExecutor()];
@@ -121,8 +125,29 @@ suite('cqrs', () => {
       aggregate.getNextEventOrdinal().must.be.equal(3);
     });
 
-    test('validate event executor', () => {
+    test('validate event executor locking true', () => {
+      // test true
       cqrs.validateEventExecutors().must.equal(true);
+
+      // test noLocking true config with ExventExecutorNoLocking class
+      try {
+        cqrs.registerEventExecutor(new TodoMarkedDoneNoLockingEventExecutor());
+        cqrs.validateEventExecutors();
+      } catch (e) {
+        e.must.be.instanceOf(ExtendedError);
+        e.message.must.be.equal('TodoMarkedDoneNoLockingEventExecutor should be an instance of EventExecutor instead of EventExecutorNoLock.');
+      }
+    });
+
+    test('validate event executor no locking', () => {
+      // test noLocking false config with ExventExecutor class
+      cqrs.useOptimisticLocking = false;
+      try {
+        cqrs.validateEventExecutors();
+      } catch (e) {
+        e.must.be.instanceOf(ExtendedError);
+        e.message.must.be.equal('TodoCreatedEventExecutor is not an instance of EventExecutorNoLock.');
+      }
     });
   });
 });

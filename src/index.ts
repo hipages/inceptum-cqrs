@@ -15,7 +15,7 @@ export { InMemoryAggregateEventStore } from './cqrs/event/store/InMemoryAggregat
 export { ExecutionContext } from './cqrs/ExecutionContext';
 export { CommandExecutor } from './cqrs/command/CommandExecutor';
 export { EventExecutor } from './cqrs/event/EventExecutor';
-export { EventExecutorNoLocking } from './cqrs/event/EventExecutorNoLocking';
+export { EventExecutorNoLock } from './cqrs/event/EventExecutorNoLock';
 export { ReturnToCallerError } from './cqrs/error/ReturnToCallerError';
 export { ValidationError } from './cqrs/error/ValidationError';
 export { AuthorizationError } from './cqrs/error/AuthorizationError';
