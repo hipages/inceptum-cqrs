@@ -3418,6 +3418,13 @@ prom-client@^10.2.2, prom-client@~10.2.2:
   dependencies:
     tdigest "^0.1.1"
 
+prom-client@^11.0.0:
+  version "11.2.1"
+  resolved "https://registry.yarnpkg.com/prom-client/-/prom-client-11.2.1.tgz#486e7817de9b1d43c0a12aee26fc68830f4d1b16"
+  integrity sha512-7VwtjrkQS50NvDoeYNn2z6wzXB5BMGzUlmMOeLPaITtJsTVXnPywRta7QFiV4pKr0fbRx9oDfUcx1xibabjSAg==
+  dependencies:
+    tdigest "^0.1.1"
+
 prometheus-extended-gauge@^0.1.2:
   version "0.1.2"
   resolved "https://registry.npmjs.org/prometheus-extended-gauge/-/prometheus-extended-gauge-0.1.2.tgz#858d53b8a038dc0dacc6b50816e7c516ec054217"
