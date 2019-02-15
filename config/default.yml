@@ -57,3 +57,4 @@ Context:
 
 Application:
   Parameter1: Value 1
+  UseOptimisticLocking: true

@@ -7,14 +7,21 @@ import { AggregateCommand } from '../../src/cqrs/command/AggregateCommand';
 import { AggregateCreatingCommand } from '../../src/cqrs/command/AggregateCreatingCommand';
 import { CommandExecutor } from '../../src/cqrs/command/CommandExecutor';
 import { CQRSAggregate, CQRSEventExecutor, CQRSCommand, CQRSCommandExecutor } from '../../src/cqrs/plugin/CQRSDecorators';
+import { EventExecutorNoLock } from '../../src/cqrs/event/EventExecutorNoLock';
 
 @CQRSAggregate
 export class TodoAggregate extends Aggregate {
+
+  protected useOptimisticLocking = true;
   static aggregateName = 'Todo';
 
   title: string;
   description: string;
   status: string;
+
+  setUseOptimisticLocking(use: boolean): void {
+    this.useOptimisticLocking = use;
+  }
 }
 
 export class TodoEvent {
@@ -87,6 +94,24 @@ export class TodoMarkedDoneEventExecutor extends EventExecutor<TodoMarkedDoneEve
 
   getEventOrdinal(e: TodoMarkedDoneEvent) {
     return e.ordinal;
+  }
+
+  public apply(event: TodoMarkedDoneEvent, aggregate: TodoAggregate) {
+    aggregate.status = 'Done';
+  }
+}
+
+@CQRSEventExecutor
+export class TodoMarkedDoneNoLockingEventExecutor extends EventExecutorNoLock<TodoMarkedDoneEvent, TodoAggregate> {
+  constructor() {
+    super(false, 'aggregateId');
+  }
+  public canExecute(event: any): boolean {
+    return event instanceof TodoMarkedDoneEvent;
+  }
+
+  getEventId(e: TodoMarkedDoneEvent): string {
+    return e.eventId;
   }
 
   public apply(event: TodoMarkedDoneEvent, aggregate: TodoAggregate) {

@@ -1,5 +1,6 @@
 import { suite, test, slow, timeout } from 'mocha-typescript';
 import { must } from 'must';
+import * as sinon from 'sinon';
 import { v1 } from 'uuid';
 import { ExtendedError } from 'inceptum';
 import { Aggregate } from '../../src/cqrs/Aggregate';
@@ -110,6 +111,26 @@ suite('cqrs/Aggregate', () => {
       } catch (err) {
         err.must.be.an.error();
       }
+    });
+
+    test.only('checkEventCanBeApplied is used for optimistic locking', () => {
+      const aggregateType = 'voucher';
+      const aggregateId = '1-aggregate-u-u-i-d';
+      const one = new TodoAggregate(aggregateType, aggregateId);
+      one.setUseOptimisticLocking(false);
+      const spyiedCheckEventApplied = sinon.spy(one, 'checkEventCanBeApplied');
+
+      const createEventExecutor = new TodoCreatedEventExecutor();
+      const todoCreatedEvent = new TodoCreatedEvent('title', 'test', 'description', v1());
+      const eeSpy =  sinon.spy(createEventExecutor, 'getEventOrdinal');
+
+      Aggregate.applyEventOnAggregate(todoCreatedEvent, createEventExecutor, one);
+      spyiedCheckEventApplied.called.must.be.false();
+
+      one.setUseOptimisticLocking(true);
+      Aggregate.applyEventOnAggregate(todoCreatedEvent, createEventExecutor, one);
+      spyiedCheckEventApplied.called.must.be.true();
+      eeSpy.called.must.be.true();
     });
   });
 });

@@ -1,11 +1,12 @@
 import { Stream } from 'stream';
-import { AutowireGroup, StartMethod, AutowireGroupDefinitions, SingletonDefinition, LogManager } from 'inceptum';
+import { AutowireGroup, StartMethod, AutowireGroupDefinitions, SingletonDefinition, LogManager, AutowireConfig, ExtendedError } from 'inceptum';
 import { AggregateEventStore } from './event/store/AggregateEventStore';
 import { ExecutionContext } from './ExecutionContext';
 import { Aggregate } from './Aggregate';
 import { Command } from './command/Command';
 import { CommandExecutor } from './command/CommandExecutor';
 import { EventExecutor } from './event/EventExecutor';
+import { EventExecutorNoLock } from './event/EventExecutorNoLock';
 
 const MAX_AGGREGATE_CACHE_ENTRIES = 1000;
 const MAX_AGGREGATE_CACHE_AGE = 1000 * 60 * 60; // one hour
@@ -69,6 +70,9 @@ export class CQRS {
   @AutowireGroup('cqrs:eventListener')
   eventListeners: EventListener[] = [];
 
+  @AutowireConfig('Application.UseOptimisticLocking')
+  useOptimisticLocking: boolean;
+
   @StartMethod
   private doSetup() {
     if (this.aggregateDefinitionsToRegister && this.aggregateDefinitionsToRegister.length > 0) {
@@ -88,6 +92,7 @@ export class CQRS {
       });
     }
     this.commandDefinitionsToRegister = null;
+    this.validateEventExecutors();
   }
 
   /**
@@ -174,4 +179,19 @@ export class CQRS {
   hasExecutorForEvent(event: any) {
     return !!EventExecutor.getEventExecutor(event, this.eventExecutors);
   }
+
+  validateEventExecutors(): boolean {
+    for (const e of this.eventExecutors) {
+      const valid = this.useOptimisticLocking ? e instanceof EventExecutor && !(e instanceof EventExecutorNoLock) : e instanceof EventExecutorNoLock;
+      if (!valid) {
+        let errMsg = `${e.constructor.name} is not an instance of EventExecutorNoLock.`;
+        if (this.useOptimisticLocking) {
+          errMsg = `${e.constructor.name} should be an instance of EventExecutor instead of EventExecutorNoLock.`;
+        }
+        throw new ExtendedError(errMsg);
+      }
+    }
+    return true;
+  }
 }
+
