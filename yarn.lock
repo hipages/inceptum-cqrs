@@ -138,9 +138,10 @@
     "@types/express-serve-static-core" "*"
     "@types/mime" "*"
 
-"@types/source-map-support@^0.2.28":
+"@types/source-map-support@0.2.28":
   version "0.2.28"
-  resolved "https://registry.npmjs.org/@types/source-map-support/-/source-map-support-0.2.28.tgz#ce6497dfa9c9fbd21a753955b4a51d8993d759dd"
+  resolved "https://registry.yarnpkg.com/@types/source-map-support/-/source-map-support-0.2.28.tgz#ce6497dfa9c9fbd21a753955b4a51d8993d759dd"
+  integrity sha1-zmSX36nJ+9IadTlVtKUdiZPXWd0=
   dependencies:
     "@types/node" "*"
 
@@ -778,9 +779,10 @@ clone@~2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/clone/-/clone-2.0.0.tgz#df65d3ca142e4a4a47db33da3468d088a16fc76e"
 
-co-mocha@^1.1.2:
+co-mocha@1.2.2:
   version "1.2.2"
-  resolved "https://registry.npmjs.org/co-mocha/-/co-mocha-1.2.2.tgz#c4fdf24d37f43ca4da668b14542a96e9377479ab"
+  resolved "https://registry.yarnpkg.com/co-mocha/-/co-mocha-1.2.2.tgz#c4fdf24d37f43ca4da668b14542a96e9377479ab"
+  integrity sha512-ocdJRn3sxonOqpdjSU2VwTwWzjTSoatzsTqCWiC3eGvJFNs8ZNMlZwfgYolQCdfddMz4muiZl99KIV9gKoNvxg==
   dependencies:
     co "^4.0.0"
     is-generator "^1.0.1"
@@ -806,9 +808,10 @@ code-point-at@^1.0.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/code-point-at/-/code-point-at-1.1.0.tgz#0d070b4d043a5bea33a2f1a40e2edb3d9a4ccf77"
 
-codecov@^2.3.0:
+codecov@2.3.1:
   version "2.3.1"
-  resolved "https://registry.npmjs.org/codecov/-/codecov-2.3.1.tgz#7dda945cd58a1f6081025b5b03ee01a2ef20f86e"
+  resolved "https://registry.yarnpkg.com/codecov/-/codecov-2.3.1.tgz#7dda945cd58a1f6081025b5b03ee01a2ef20f86e"
+  integrity sha1-fdqUXNWKH2CBAltbA+4Bou8g+G4=
   dependencies:
     argv "0.0.2"
     request "2.77.0"
@@ -1083,9 +1086,10 @@ double-ended-queue@^2.1.0-0:
   version "2.1.0-0"
   resolved "https://registry.npmjs.org/double-ended-queue/-/double-ended-queue-2.1.0-0.tgz#103d3527fd31528f40188130c841efdd78264e5c"
 
-doubleagent@^1.1.0:
+doubleagent@1.1.1:
   version "1.1.1"
-  resolved "https://registry.npmjs.org/doubleagent/-/doubleagent-1.1.1.tgz#ef67a7704bd6a5b2f25526cbeac6d732e9cbe919"
+  resolved "https://registry.yarnpkg.com/doubleagent/-/doubleagent-1.1.1.tgz#ef67a7704bd6a5b2f25526cbeac6d732e9cbe919"
+  integrity sha512-09pMJnEWmva8qBlNuyv2h/oJdG6ca0KSgyLDH0zzU+64XzVJgdLZF+yWWBnLMi8Y1AVgfuzSglm2QhIRZ14o5w==
   dependencies:
     superagent "^3.8.2"
 
@@ -1796,9 +1800,10 @@ http-signature@~1.2.0:
     jsprim "^1.2.2"
     sshpk "^1.7.0"
 
-husky@^0.14.3:
+husky@0.14.3:
   version "0.14.3"
-  resolved "https://registry.npmjs.org/husky/-/husky-0.14.3.tgz#c69ed74e2d2779769a17ba8399b54ce0b63c12c3"
+  resolved "https://registry.yarnpkg.com/husky/-/husky-0.14.3.tgz#c69ed74e2d2779769a17ba8399b54ce0b63c12c3"
+  integrity sha512-e21wivqHpstpoiWA/Yi8eFti8E+sQDSS53cpJsPptPs295QTOQR0ZwnHo2TXy1XOpZFD9rPOd3NpmqTK6uMLJA==
   dependencies:
     is-ci "^1.0.10"
     normalize-path "^1.0.0"
@@ -2870,21 +2875,24 @@ mkdirp@0.5.1, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.1:
   dependencies:
     minimist "0.0.8"
 
-mocha-lcov-reporter@^1.3.0:
+mocha-lcov-reporter@1.3.0:
   version "1.3.0"
-  resolved "https://registry.npmjs.org/mocha-lcov-reporter/-/mocha-lcov-reporter-1.3.0.tgz#469bdef4f8afc9a116056f079df6182d0afb0384"
+  resolved "https://registry.yarnpkg.com/mocha-lcov-reporter/-/mocha-lcov-reporter-1.3.0.tgz#469bdef4f8afc9a116056f079df6182d0afb0384"
+  integrity sha1-Rpve9PivyaEWBW8HnfYYLQr7A4Q=
 
-mocha-typescript@^1.1.12:
+mocha-typescript@1.1.12:
   version "1.1.12"
-  resolved "https://registry.npmjs.org/mocha-typescript/-/mocha-typescript-1.1.12.tgz#ff389bc2349677ecfc32c45cf0865993d82a2a17"
+  resolved "https://registry.yarnpkg.com/mocha-typescript/-/mocha-typescript-1.1.12.tgz#ff389bc2349677ecfc32c45cf0865993d82a2a17"
+  integrity sha512-vnq0iOYdeP0w7xaWTeQxniy/CJ/uQGI5rHerTB/PVeUm2GNKcy2tJFGikmAw73boJIYsdQ/H5TR09E4QCUib6A==
   dependencies:
     chalk "^1.1.3"
     cross-spawn "^5.1.0"
     yargs "^6.5.0"
 
-mocha@^4.0.1:
+mocha@4.1.0:
   version "4.1.0"
-  resolved "https://registry.npmjs.org/mocha/-/mocha-4.1.0.tgz#7d86cfbcf35cb829e2754c32e17355ec05338794"
+  resolved "https://registry.yarnpkg.com/mocha/-/mocha-4.1.0.tgz#7d86cfbcf35cb829e2754c32e17355ec05338794"
+  integrity sha512-0RVnjg1HJsXY2YFDoTNzcc1NKhYuXKRrBAG2gDygmJJA136Cs2QlRliZG1mA0ap7cuaT30mw16luAeln+4RiNA==
   dependencies:
     browser-stdout "1.3.0"
     commander "2.11.0"
@@ -2938,9 +2946,10 @@ multer@^1.1.0:
     type-is "^1.6.4"
     xtend "^4.0.0"
 
-must@^0.13.4:
+must@0.13.4:
   version "0.13.4"
-  resolved "https://registry.npmjs.org/must/-/must-0.13.4.tgz#9d1389f458e894b2aa04032bfeb7a40714f78171"
+  resolved "https://registry.yarnpkg.com/must/-/must-0.13.4.tgz#9d1389f458e894b2aa04032bfeb7a40714f78171"
+  integrity sha1-nROJ9FjolLKqBAMr/rekBxT3gXE=
   dependencies:
     egal ">= 1.3.0 < 2"
     json-stringify-safe ">= 5 < 6"
@@ -3077,9 +3086,10 @@ number-is-nan@^1.0.0:
   version "1.0.1"
   resolved "https://registry.npmjs.org/number-is-nan/-/number-is-nan-1.0.1.tgz#097b602b53422a522c1afb8790318336941a011d"
 
-nyc@^11.7.1:
+nyc@11.7.1:
   version "11.7.1"
-  resolved "https://registry.npmjs.org/nyc/-/nyc-11.7.1.tgz#7cb0a422e501b88ff2c1634341dec2560299d67b"
+  resolved "https://registry.yarnpkg.com/nyc/-/nyc-11.7.1.tgz#7cb0a422e501b88ff2c1634341dec2560299d67b"
+  integrity sha512-EGePURSKUEpS1jWnEKAMhY+GWZzi7JC+f8iBDOATaOsLZW5hM/9eYx2dHGaEXa1ITvMm44CJugMksvP3NwMQMw==
   dependencies:
     archy "^1.0.0"
     arrify "^1.0.1"
@@ -3872,9 +3882,9 @@ signal-exit@^3.0.0, signal-exit@^3.0.1, signal-exit@^3.0.2:
   version "3.0.2"
   resolved "https://registry.npmjs.org/signal-exit/-/signal-exit-3.0.2.tgz#b5fdc08f1287ea1178628e415e25132b73646c6d"
 
-sinon@^7.2.3:
+sinon@7.2.3:
   version "7.2.3"
-  resolved "https://registry.npmjs.org/sinon/-/sinon-7.2.3.tgz#f8bfd956df32ddf592f8c102fd46982366412d8e"
+  resolved "https://registry.yarnpkg.com/sinon/-/sinon-7.2.3.tgz#f8bfd956df32ddf592f8c102fd46982366412d8e"
   integrity sha512-i6j7sqcLEqTYqUcMV327waI745VASvYuSuQMCjbAwlpAeuCgKZ3LtrjDxAbu+GjNQR0FEDpywtwGCIh8GicNyg==
   dependencies:
     "@sinonjs/commons" "^1.3.0"
@@ -4338,9 +4348,10 @@ trim-right@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/trim-right/-/trim-right-1.0.1.tgz#cb2e1203067e0c8de1f614094b9fe45704ea6003"
 
-ts-node@^6.0.0:
+ts-node@6.0.0:
   version "6.0.0"
-  resolved "https://registry.npmjs.org/ts-node/-/ts-node-6.0.0.tgz#46c25f8498593a9248eeea16906f1598fa098140"
+  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-6.0.0.tgz#46c25f8498593a9248eeea16906f1598fa098140"
+  integrity sha512-+CQev+4J7BAUNUnW9piRzSfSZZWeFCjgUjMSgGs4+dJ2RZa86NVW9MOlP4e6/kEHTyOqdxHxcIMd7KgmY/ynVw==
   dependencies:
     arrify "^1.0.0"
     chalk "^2.3.0"
@@ -4355,9 +4366,10 @@ tslib@^1.8.0, tslib@^1.8.1:
   version "1.9.0"
   resolved "https://registry.npmjs.org/tslib/-/tslib-1.9.0.tgz#e37a86fda8cbbaf23a057f473c9f4dc64e5fc2e8"
 
-tslint-config-shopify@^3.0.1:
+tslint-config-shopify@3.0.1:
   version "3.0.1"
-  resolved "https://registry.npmjs.org/tslint-config-shopify/-/tslint-config-shopify-3.0.1.tgz#d37a1468f7c799afffb416bc0e776cdd9b787757"
+  resolved "https://registry.yarnpkg.com/tslint-config-shopify/-/tslint-config-shopify-3.0.1.tgz#d37a1468f7c799afffb416bc0e776cdd9b787757"
+  integrity sha512-2xdHd9knRtb/aFTy/ALnJyKFwJsMVr38jDA+FKGTCA1fDwX8pXlbVXfR7h8IKyP/P4IMquKufQ0ZF2MeFLrrWQ==
   dependencies:
     tslint-react "^3.0.0"
 
@@ -4367,9 +4379,10 @@ tslint-react@^3.0.0:
   dependencies:
     tsutils "^2.13.1"
 
-tslint@^5.7.0:
+tslint@5.9.1:
   version "5.9.1"
-  resolved "https://registry.npmjs.org/tslint/-/tslint-5.9.1.tgz#1255f87a3ff57eb0b0e1f0e610a8b4748046c9ae"
+  resolved "https://registry.yarnpkg.com/tslint/-/tslint-5.9.1.tgz#1255f87a3ff57eb0b0e1f0e610a8b4748046c9ae"
+  integrity sha1-ElX4ej/1frCw4fDmEKi0dIBGya4=
   dependencies:
     babel-code-frame "^6.22.0"
     builtin-modules "^1.1.1"
@@ -4420,9 +4433,10 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
 
-typescript@^2.8.3:
+typescript@2.8.3:
   version "2.8.3"
-  resolved "https://registry.npmjs.org/typescript/-/typescript-2.8.3.tgz#5d817f9b6f31bb871835f4edf0089f21abe6c170"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.8.3.tgz#5d817f9b6f31bb871835f4edf0089f21abe6c170"
+  integrity sha512-K7g15Bb6Ra4lKf7Iq2l/I5/En+hLIHmxWZGq3D4DIRNFxMNV6j2SHSvDOqs2tGd4UvD/fJvrwopzQXjLrT7Itw==
 
 uglify-js@^2.6:
   version "2.8.29"
