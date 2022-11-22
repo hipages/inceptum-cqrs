@@ -12,7 +12,9 @@
     "prepublishOnly": "npm run clean && tsc && npm test && npm run lint",
     "precommit": "npm run lint",
     "prepush": "node .checkpush.js",
-    "build": "tsc"
+    "build": "tsc",
+    "prepare": "yarn run snyk-protect",
+    "snyk-protect": "snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -32,11 +34,12 @@
   },
   "dependencies": {
     "@types/uuid": "^3.4.2",
-    "inceptum": "^0.9.2",
+    "inceptum": "^0.9.13",
     "json-stringify-safe": "^5.0.1",
     "jsonwebtoken": "7.3.0",
     "prom-client": "^10.2.2",
-    "uuid": "3.0.1"
+    "uuid": "3.0.1",
+    "@snyk/protect": "latest"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "7.2.0",
@@ -76,5 +79,6 @@
     ],
     "sourceMap": true,
     "instrument": true
-  }
+  },
+  "snyk": true
 }
